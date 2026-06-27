@@ -1,0 +1,1673 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>점심 주문 관리</title>
+
+<!-- PWA 기본 설정 -->
+<meta name="application-name" content="점심 주문">
+<meta name="description" content="사무실 도시락 주문·정산 시스템">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="점심 주문">
+<link rel="manifest" id="pwa-manifest">
+
+<!-- 아이폰 홈화면 아이콘 (인라인 SVG → data URI) -->
+<link rel="apple-touch-icon" id="apple-icon">
+
+<!-- 안드로이드 상태바 색상 -->
+<meta name="msapplication-TileColor" content="#2563eb">
+<style>
+:root {
+  --primary:#2563eb;--primary-light:#eff6ff;--primary-dark:#1d4ed8;
+  --success:#16a34a;--success-light:#f0fdf4;
+  --warning:#d97706;--warning-light:#fffbeb;
+  --danger:#dc2626;--danger-light:#fef2f2;
+  --gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;
+  --gray-300:#d1d5db;--gray-400:#9ca3af;--gray-500:#6b7280;
+  --gray-600:#4b5563;--gray-700:#374151;--gray-800:#1f2937;--gray-900:#111827;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(0,0,0,.1),0 1px 2px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.1),0 4px 6px rgba(0,0,0,.05);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI','Malgun Gothic',sans-serif;background:var(--gray-50);color:var(--gray-800);min-height:100vh;}
+
+/* ── 로그인 ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;background:linear-gradient(135deg,#1e40af 0%,#3b82f6 50%,#60a5fa 100%);}
+.login-card{background:white;border-radius:20px;padding:40px;width:100%;max-width:400px;box-shadow:var(--shadow-lg);}
+.login-logo{text-align:center;margin-bottom:28px;}
+.login-logo .icon{font-size:48px;display:block;margin-bottom:8px;}
+.login-logo h1{font-size:22px;font-weight:700;color:var(--gray-900);}
+.login-logo p{font-size:13px;color:var(--gray-500);margin-top:4px;}
+.mode-tabs{display:flex;gap:8px;margin-bottom:24px;background:var(--gray-100);border-radius:var(--radius);padding:4px;}
+.mode-tab{flex:1;padding:9px;text-align:center;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--gray-500);transition:all .2s;}
+.mode-tab.active{background:white;color:var(--primary);box-shadow:var(--shadow);}
+.form-group{margin-bottom:16px;}
+.form-group label{display:block;font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:6px;}
+.form-group input,.form-group select{width:100%;padding:10px 14px;border:1.5px solid var(--gray-200);border-radius:var(--radius);font-size:14px;color:var(--gray-800);transition:border-color .2s;outline:none;}
+.form-group input:focus,.form-group select:focus{border-color:var(--primary);}
+.btn{width:100%;padding:12px;border-radius:var(--radius);font-size:15px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.btn-primary{background:var(--primary);color:white;}
+.btn-primary:hover{background:var(--primary-dark);}
+.btn-sm{width:auto;padding:7px 16px;font-size:13px;font-weight:600;border-radius:8px;}
+.btn-outline{background:white;border:1.5px solid var(--gray-200);color:var(--gray-700);}
+.btn-outline:hover{border-color:var(--primary);color:var(--primary);}
+.btn-success{background:var(--success);color:white;}
+.btn-danger{background:var(--danger);color:white;}
+
+/* ── 앱 ── */
+#app{display:none;min-height:100vh;}
+.app-header{background:white;border-bottom:1px solid var(--gray-200);padding:0 20px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+.header-left{display:flex;align-items:center;gap:12px;}
+.header-logo{font-size:20px;}
+.header-title{font-size:17px;font-weight:700;color:var(--gray-900);}
+.header-badge{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700;}
+.badge-admin{background:#fef3c7;color:#92400e;}
+.badge-user{background:var(--primary-light);color:var(--primary-dark);}
+.header-right{display:flex;align-items:center;gap:10px;}
+.user-name{font-size:14px;font-weight:600;color:var(--gray-700);}
+.logout-btn{font-size:13px;color:var(--gray-500);cursor:pointer;padding:6px 12px;border-radius:8px;border:1px solid var(--gray-200);background:white;}
+.logout-btn:hover{color:var(--danger);border-color:var(--danger);}
+.app-body{padding:24px 20px;max-width:960px;margin:0 auto;}
+
+/* ── 네비 ── */
+.nav-tabs{display:flex;gap:4px;margin-bottom:24px;background:white;border-radius:var(--radius);padding:5px;border:1px solid var(--gray-200);overflow-x:auto;}
+.nav-tab{padding:9px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--gray-500);transition:all .2s;white-space:nowrap;}
+.nav-tab.active{background:var(--primary);color:white;}
+.nav-tab:hover:not(.active){background:var(--gray-100);color:var(--gray-700);}
+
+/* ── 카드 ── */
+.card{background:white;border-radius:var(--radius);border:1px solid var(--gray-200);padding:20px;margin-bottom:16px;box-shadow:var(--shadow);}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.card-title{font-size:16px;font-weight:700;color:var(--gray-900);display:flex;align-items:center;gap:8px;}
+
+/* ── 메뉴 그리드 ── */
+.menu-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.menu-day{border:1.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;}
+.menu-day-header{background:var(--primary);color:white;padding:8px;text-align:center;font-size:12px;font-weight:700;}
+.menu-day-header.today{background:var(--warning);}
+.menu-day-body{padding:10px;}
+.menu-type{font-size:10px;font-weight:700;color:var(--gray-400);margin-bottom:2px;}
+.menu-korean{font-size:12px;color:var(--gray-700);line-height:1.4;}
+.menu-salad{font-size:12px;color:#16a34a;line-height:1.4;}
+
+/* ── 이미지 업로드 ── */
+.upload-zone{border:2px dashed var(--gray-300);border-radius:12px;padding:32px 20px;text-align:center;cursor:pointer;transition:all .2s;}
+.upload-zone:hover,.upload-zone.drag{border-color:var(--primary);background:var(--primary-light);}
+.upload-zone .uz-icon{font-size:40px;margin-bottom:10px;}
+.upload-zone p{font-size:14px;color:var(--gray-500);}
+.upload-zone strong{color:var(--primary);}
+.menu-uploaded{width:100%;max-height:320px;object-fit:contain;border-radius:10px;border:1px solid var(--gray-200);}
+
+/* ── 입력 방식 토글 ── */
+.input-mode-toggle{display:flex;gap:0;margin-bottom:20px;border:1.5px solid var(--gray-200);border-radius:10px;overflow:hidden;background:var(--gray-100);}
+.imt-btn{flex:1;padding:11px 0;font-size:14px;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--gray-500);transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;}
+.imt-btn.active{background:white;color:var(--primary);box-shadow:0 1px 4px rgba(0,0,0,.10);}
+.imt-btn:first-child{border-right:1.5px solid var(--gray-200);}
+.imt-section{display:none;}
+.imt-section.visible{display:block;}
+.menu-input-row{display:flex;flex-direction:column;gap:6px;margin-bottom:6px;}
+.menu-input-label{font-size:11px;font-weight:700;color:var(--gray-500);margin-bottom:2px;}
+.menu-input-field{width:100%;font-size:12px;padding:6px 8px;border:1.5px solid var(--gray-200);border-radius:6px;color:var(--gray-800);outline:none;transition:border-color .15s;}
+.menu-input-field:focus{border-color:var(--primary);}
+.menu-day-wrap{border:1.5px solid var(--gray-200);border-radius:var(--radius);overflow:hidden;}
+
+/* ── AI 분석 ── */
+.ai-analyzing{display:flex;align-items:center;gap:12px;padding:16px;background:#f0f9ff;border:1px solid #bae6fd;border-radius:var(--radius);margin-top:12px;}
+.ai-spinner{width:20px;height:20px;border:3px solid #bae6fd;border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.ai-result-box{background:#f0fdf4;border:1.5px solid #86efac;border-radius:var(--radius);padding:14px;margin-top:12px;}
+.ai-result-title{font-size:13px;font-weight:700;color:#166534;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+
+/* ── 주문 폼 ── */
+.order-form{display:flex;flex-direction:column;gap:12px;}
+.order-day-row{border:1.5px solid var(--gray-200);border-radius:var(--radius);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;transition:all .2s;}
+.order-day-row.submitted{border-color:var(--success);background:var(--success-light);}
+.order-day-label{font-size:14px;font-weight:700;color:var(--gray-800);min-width:70px;}
+.order-options{display:flex;gap:8px;flex-wrap:wrap;}
+.option-btn{padding:8px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;border:1.5px solid var(--gray-300);background:white;color:var(--gray-600);transition:all .2s;}
+.option-btn:hover{border-color:var(--primary);color:var(--primary);}
+.option-btn.sel-none{border-color:var(--gray-500);background:var(--gray-100);color:var(--gray-700);}
+.option-btn.sel-korean{border-color:var(--primary);background:var(--primary-light);color:var(--primary-dark);}
+.option-btn.sel-salad{border-color:var(--success);background:var(--success-light);color:var(--success);}
+
+/* ── 통계 ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;}
+.stat-card{background:white;border-radius:var(--radius);padding:16px;border:1px solid var(--gray-200);text-align:center;}
+.stat-num{font-size:28px;font-weight:800;color:var(--primary);}
+.stat-label{font-size:12px;color:var(--gray-500);margin-top:4px;font-weight:600;}
+
+/* ── 테이블 ── */
+.tbl{width:100%;border-collapse:collapse;font-size:13px;}
+.tbl th{padding:10px 12px;background:var(--gray-50);border-bottom:2px solid var(--gray-200);text-align:left;font-size:12px;font-weight:700;color:var(--gray-600);}
+.tbl td{padding:10px 12px;border-bottom:1px solid var(--gray-100);}
+.tbl tr:hover td{background:var(--gray-50);}
+.amt{font-weight:700;color:var(--danger);}
+
+/* ── 직원 ── */
+.emp-list{display:flex;flex-direction:column;gap:8px;}
+.emp-row{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border:1px solid var(--gray-200);border-radius:var(--radius);background:white;}
+.emp-info{display:flex;align-items:center;gap:10px;}
+.emp-av{width:36px;height:36px;border-radius:50%;background:var(--primary-light);color:var(--primary);font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.emp-name{font-size:14px;font-weight:600;color:var(--gray-800);}
+.emp-dept{font-size:12px;color:var(--gray-500);}
+.role-tag{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:600;}
+.role-admin{background:#fef3c7;color:#92400e;}
+.role-user{background:var(--primary-light);color:var(--primary-dark);}
+
+/* ── 공지 ── */
+.notice-box{background:#fffbe6;border:2px solid #fbbf24;border-radius:var(--radius);padding:16px;font-size:13px;line-height:1.8;white-space:pre-wrap;font-family:monospace;color:var(--gray-800);}
+
+/* ── 팝업 알림 배너 ── */
+.alert-banner{border-radius:14px;padding:20px 22px;margin-bottom:16px;position:relative;overflow:hidden;}
+.alert-today{background:linear-gradient(135deg,#fef9c3 0%,#fef3c7 100%);border:2px solid #fbbf24;}
+.alert-tomorrow{background:linear-gradient(135deg,#eff6ff 0%,#dbeafe 100%);border:2px solid #93c5fd;}
+.alert-label{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;}
+.alert-today .alert-label{color:#92400e;}
+.alert-tomorrow .alert-label{color:#1d4ed8;}
+.alert-title{font-size:18px;font-weight:800;margin-bottom:10px;}
+.alert-today .alert-title{color:#78350f;}
+.alert-tomorrow .alert-title{color:#1e3a8a;}
+.alert-menus{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.alert-menu-chip{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;border:2px solid transparent;}
+.chip-korean{background:#dbeafe;color:#1d4ed8;}
+.chip-korean:hover,.chip-korean.selected{background:var(--primary);color:white;border-color:var(--primary);}
+.chip-salad{background:#dcfce7;color:#166534;}
+.chip-salad:hover,.chip-salad.selected{background:var(--success);color:white;border-color:var(--success);}
+.chip-none{background:var(--gray-100);color:var(--gray-600);}
+.chip-none:hover,.chip-none.selected{background:var(--gray-500);color:white;}
+.alert-saved-badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;background:#dcfce7;color:#166534;}
+.alert-deco{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:52px;opacity:.15;pointer-events:none;}
+
+/* ── 토스트 ── */
+.toast{position:fixed;top:20px;right:20px;background:var(--gray-800);color:white;padding:12px 18px;border-radius:var(--radius);font-size:13px;font-weight:600;z-index:9999;opacity:0;transform:translateY(-10px);transition:all .3s;pointer-events:none;max-width:320px;}
+.toast.show{opacity:1;transform:translateY(0);}
+.toast.success{background:var(--success);}
+.toast.error{background:var(--danger);}
+.toast.warning{background:var(--warning);}
+
+/* ── 모달 ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1000;display:none;align-items:center;justify-content:center;padding:20px;}
+.modal-overlay.open{display:flex;}
+.modal{background:white;border-radius:16px;padding:28px;width:100%;max-width:440px;box-shadow:var(--shadow-lg);}
+.modal h3{font-size:18px;font-weight:700;margin-bottom:20px;color:var(--gray-900);}
+.modal-footer{display:flex;gap:10px;margin-top:24px;justify-content:flex-end;}
+.input-row{display:flex;gap:10px;}
+.input-row .form-group{flex:1;}
+
+/* ── 유틸 ── */
+.hidden{display:none!important;}
+.text-muted{color:var(--gray-500);font-size:13px;}
+.mt-8{margin-top:8px;}
+.mt-12{margin-top:12px;}
+.info-box{background:var(--primary-light);border:1px solid #bfdbfe;border-radius:var(--radius);padding:14px 16px;font-size:13px;color:var(--primary-dark);margin-bottom:16px;}
+.deadline-tag{font-size:11px;background:#fef9c3;color:#854d0e;padding:3px 8px;border-radius:20px;font-weight:700;}
+.sdiv{display:flex;align-items:center;gap:12px;margin:20px 0 14px;}
+.sdiv span{font-size:13px;font-weight:700;color:var(--gray-500);white-space:nowrap;}
+.sdiv::before,.sdiv::after{content:'';flex:1;height:1px;background:var(--gray-200);}
+.save-row{display:flex;justify-content:flex-end;margin-top:12px;gap:8px;}
+
+@media(max-width:640px){
+  .menu-grid{grid-template-columns:1fr 1fr;}
+  .stats-grid{grid-template-columns:1fr 1fr;}
+  .order-day-row{flex-direction:column;align-items:flex-start;}
+  .app-body{padding:16px 12px;}
+  .alert-deco{display:none;}
+}
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <span class="icon">🍱</span>
+      <h1>점심 주문 관리</h1>
+      <p>사무실 도시락 주문 · 정산 시스템</p>
+    </div>
+    <div class="mode-tabs">
+      <button class="mode-tab active" onclick="setLoginMode('admin')">관리자 로그인</button>
+      <button class="mode-tab" onclick="setLoginMode('user')">직원 로그인</button>
+    </div>
+    <div id="admin-pw-group" class="form-group">
+      <label>관리자 비밀번호</label>
+      <input type="password" id="admin-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <div id="user-login-fields" class="hidden">
+      <div class="form-group">
+        <label>직원 선택</label>
+        <select id="user-select"><option value="">-- 이름을 선택하세요 --</option></select>
+      </div>
+      <div class="form-group">
+        <label>비밀번호</label>
+        <input type="password" id="user-pw" placeholder="비밀번호 입력" onkeydown="if(event.key==='Enter')doLogin()">
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="doLogin()">로그인</button>
+    <p class="text-muted mt-12" style="text-align:center;font-size:12px;">관리자 초기 비밀번호: <strong>admin1234</strong> / 직원 초기 비밀번호: <strong>1234</strong></p>
+  </div>
+</div>
+
+<!-- 앱 -->
+<div id="app">
+  <header class="app-header">
+    <div class="header-left">
+      <span class="header-logo">🍱</span>
+      <span class="header-title">점심 주문 관리</span>
+      <span class="header-badge" id="mode-badge"></span>
+    </div>
+    <div class="header-right">
+      <span class="user-name" id="header-username"></span>
+      <button class="logout-btn" onclick="doLogout()">로그아웃</button>
+    </div>
+  </header>
+  <div class="app-body">
+    <div class="nav-tabs" id="nav-tabs"></div>
+    <div id="tab-content"></div>
+  </div>
+</div>
+
+<!-- 직원 추가 모달 -->
+<div class="modal-overlay" id="employee-modal">
+  <div class="modal">
+    <h3>직원 추가</h3>
+    <div class="input-row">
+      <div class="form-group"><label>이름</label><input type="text" id="emp-name" placeholder="홍길동"></div>
+      <div class="form-group"><label>부서</label><input type="text" id="emp-dept" placeholder="총무팀"></div>
+    </div>
+    <div class="form-group"><label>권한</label>
+      <select id="emp-role"><option value="user">직원 (사용자)</option><option value="admin">관리자</option></select>
+    </div>
+    <div class="form-group"><label>비밀번호</label><input type="password" id="emp-pw" placeholder="초기 비밀번호"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-outline" onclick="closeModal()">취소</button>
+      <button class="btn btn-sm btn-primary" onclick="addEmployee()">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- 계좌 모달 -->
+<div class="modal-overlay" id="account-modal">
+  <div class="modal">
+    <h3>계좌 정보 설정</h3>
+    <div class="form-group"><label>예금주</label><input type="text" id="acc-holder" placeholder="홍길동"></div>
+    <div class="form-group"><label>은행명</label><input type="text" id="acc-bank" placeholder="국민은행"></div>
+    <div class="form-group"><label>계좌번호</label><input type="text" id="acc-number" placeholder="123-456-789012"></div>
+    <div class="modal-footer">
+      <button class="btn btn-sm btn-outline" onclick="closeModal()">취소</button>
+      <button class="btn btn-sm btn-primary" onclick="saveAccount()">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════
+//  스토리지 & 상태
+// ═══════════════════════════════
+const LS = {
+  employees:'lm_employees', menus:'lm_menus', orders:'lm_orders',
+  account:'lm_account', adminPw:'lm_admin_pw',
+  menuImageThis:'lm_menu_image_this',
+  menuImageNext:'lm_menu_image_next',
+};
+function lsGet(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch{return d;}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){console.warn('LS error',e);}}
+
+let ST = {
+  mode:'admin', currentUser:null, activeTab:'', inputMode:'auto', selectedMonth:'',
+  employees: lsGet(LS.employees,[
+    {id:1,name:'김철수',dept:'총무팀',role:'admin',pw:'admin1234'},
+    {id:2,name:'이영희',dept:'영업팀',role:'user',pw:'1234'},
+    {id:3,name:'박민준',dept:'개발팀',role:'user',pw:'1234'},
+  ]),
+  menus:         lsGet(LS.menus,{}),
+  orders:        lsGet(LS.orders,{}),
+  account:       lsGet(LS.account,{holder:'',bank:'',number:''}),
+  adminPw:       lsGet(LS.adminPw,'admin1234'),
+  menuImageThis: lsGet(LS.menuImageThis,null),  // 이번 주 식단표 사진
+  menuImageNext: lsGet(LS.menuImageNext,null),  // 다음 주 식단표 사진
+};
+function persist(){
+  lsSet(LS.employees,ST.employees);lsSet(LS.menus,ST.menus);lsSet(LS.orders,ST.orders);
+  lsSet(LS.account,ST.account);lsSet(LS.adminPw,ST.adminPw);
+  lsSet(LS.menuImageThis,ST.menuImageThis);
+  lsSet(LS.menuImageNext,ST.menuImageNext);
+}
+
+// ═══════════════════════════════
+//  날짜 유틸
+// ═══════════════════════════════
+const DAY_KO=['일','월','화','수','목','금','토'];
+
+// ★ UTC 파싱 버그 수정: 'YYYY-MM-DD'를 로컬 시간으로 파싱
+function parseLocalDate(d){
+  const [y,m,day]=d.split('-').map(Number);
+  return new Date(y,m-1,day);
+}
+function todayStr(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function fmtDate(d){
+  const dt=parseLocalDate(d);
+  return `${dt.getMonth()+1}/${dt.getDate()}(${DAY_KO[dt.getDay()]})`;
+}
+function getWeekDays(base){
+  const dt=parseLocalDate(base),day=dt.getDay();
+  const mon=new Date(dt);mon.setDate(dt.getDate()-(day===0?6:day-1));
+  return Array.from({length:5},(_,i)=>{
+    const dd=new Date(mon);dd.setDate(mon.getDate()+i);
+    return `${dd.getFullYear()}-${String(dd.getMonth()+1).padStart(2,'0')}-${String(dd.getDate()).padStart(2,'0')}`;
+  });
+}
+function thisWeekDays(){return getWeekDays(todayStr());}
+function nextWeekDays(){
+  const d=new Date();d.setDate(d.getDate()+7);
+  const s=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  return getWeekDays(s);
+}
+// ★ 이번 주 + 다음 주 날짜 모두 반환 (입력 범위 확대)
+function thisAndNextWeekDays(){return [...thisWeekDays(),...nextWeekDays()];}
+function nextWorkday(){
+  const d=new Date();let nd=new Date(d);nd.setDate(d.getDate()+1);
+  while([0,6].includes(nd.getDay()))nd.setDate(nd.getDate()+1);
+  return `${nd.getFullYear()}-${String(nd.getMonth()+1).padStart(2,'0')}-${String(nd.getDate()).padStart(2,'0')}`;
+}
+function thisMonth(){return todayStr().slice(0,7);}
+function lastWorkdayOfMonth(ym){
+  const [y,m]=ym.split('-').map(Number);
+  let d=new Date(y,m,0);
+  while([0,6].includes(d.getDay()))d.setDate(d.getDate()-1);
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function isToday(d){return d===todayStr();}
+function isTomorrow(d){return d===nextWorkday();}
+
+// ═══════════════════════════════
+//  토스트
+// ═══════════════════════════════
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='toast show '+(type||'');
+  clearTimeout(el._t);el._t=setTimeout(()=>el.className='toast',2800);
+}
+
+// ═══════════════════════════════
+//  로그인
+// ═══════════════════════════════
+let loginMode='admin';
+function setLoginMode(m){
+  loginMode=m;
+  document.querySelectorAll('.mode-tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&m==='admin')||(i===1&&m==='user')));
+  document.getElementById('admin-pw-group').classList.toggle('hidden',m!=='admin');
+  document.getElementById('user-login-fields').classList.toggle('hidden',m!=='user');
+  if(m==='user')populateUserSel();
+}
+function populateUserSel(){
+  const sel=document.getElementById('user-select');
+  sel.innerHTML='<option value="">-- 이름을 선택하세요 --</option>';
+  ST.employees.forEach(e=>{const o=document.createElement('option');o.value=e.id;o.textContent=`${e.name} (${e.dept})`;sel.appendChild(o);});
+}
+function doLogin(){
+  if(loginMode==='admin'){
+    if(document.getElementById('admin-pw').value!==ST.adminPw){toast('비밀번호가 틀렸습니다','error');return;}
+    ST.currentUser=ST.employees.find(e=>e.role==='admin')||{name:'관리자',role:'admin'};
+    ST.mode='admin';
+  }else{
+    const id=parseInt(document.getElementById('user-select').value);
+    const pw=document.getElementById('user-pw').value;
+    if(!id){toast('직원을 선택하세요','error');return;}
+    const emp=ST.employees.find(e=>e.id===id);
+    if(!emp||emp.pw!==pw){toast('비밀번호가 틀렸습니다','error');return;}
+    ST.currentUser=emp;ST.mode=emp.role;
+  }
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('header-username').textContent=ST.currentUser.name;
+  const b=document.getElementById('mode-badge');
+  b.textContent=ST.mode==='admin'?'관리자':'직원';
+  b.className='header-badge '+(ST.mode==='admin'?'badge-admin':'badge-user');
+  ST.activeTab='';
+  renderTabs();
+}
+function doLogout(){
+  ST.currentUser=null;
+  document.getElementById('app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('admin-pw').value='';
+  document.getElementById('user-pw').value='';
+  ST.activeTab='';
+}
+
+// ═══════════════════════════════
+//  탭 렌더
+// ═══════════════════════════════
+const ADMIN_TABS=[
+  {id:'dashboard',label:'📊 대시보드'},
+  {id:'menu-upload',label:'📋 식단표 등록'},
+  {id:'orders-overview',label:'📦 주문 현황'},
+  {id:'monthly-orders',label:'📈 월별 현황'},
+  {id:'settlement',label:'💰 정산 관리'},
+  {id:'employees',label:'👥 직원 관리'},
+  {id:'notice',label:'📢 공지 생성'},
+];
+const USER_TABS=[
+  {id:'user-home',label:'🏠 홈'},
+  {id:'user-menu',label:'🍽️ 이번 주 식단'},
+  {id:'user-order',label:'✅ 식사 신청'},
+  {id:'user-settlement',label:'💰 나의 정산'},
+];
+function renderTabs(){
+  const tabs=ST.mode==='admin'?ADMIN_TABS:USER_TABS;
+  if(!ST.activeTab||!tabs.find(t=>t.id===ST.activeTab))ST.activeTab=tabs[0].id;
+  const nav=document.getElementById('nav-tabs');
+  nav.innerHTML=tabs.map(t=>`<button class="nav-tab${ST.activeTab===t.id?' active':''}" onclick="switchTab('${t.id}')">${t.label}</button>`).join('');
+  renderTab();
+}
+function switchTab(id){
+  ST.activeTab=id;
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t=>{if(t.getAttribute('onclick')===`switchTab('${id}')`)t.classList.add('active');});
+  renderTab();
+}
+function renderTab(){
+  const fn={
+    'dashboard':tDashboard,'menu-upload':tMenuUpload,'orders-overview':tOrdersOverview,
+    'monthly-orders':tMonthlyOrders,
+    'settlement':tSettlement,'employees':tEmployees,'notice':tNotice,
+    'user-home':tUserHome,'user-menu':tUserMenu,'user-order':tUserOrder,'user-settlement':tUserSettlement,
+  }[ST.activeTab];
+  document.getElementById('tab-content').innerHTML=fn?fn():'';
+  postRender();
+}
+
+// ═══════════════════════════════
+//  공통 컴포넌트
+// ═══════════════════════════════
+function alertBannerHTML(dateStr,label,cssClass,deco){
+  const menu=ST.menus[dateStr]||{};
+  const emp=ST.currentUser;
+  const ord=emp?(ST.orders[dateStr]||[]).find(o=>o.empId===emp.id):null;
+  const choice=ord?ord.choice:'';
+  const savedBadge=choice?`<span class="alert-saved-badge">✓ ${choice==='none'?'불참':choice==='korean'?'한식':'샐러드'} 선택됨</span>`:'';
+  return `
+  <div class="alert-banner ${cssClass}">
+    <div class="alert-deco">${deco}</div>
+    <div class="alert-label">${label}</div>
+    <div class="alert-title">${fmtDate(dateStr)} 메뉴</div>
+    <div class="alert-menus">
+      ${menu.korean?`<button class="alert-menu-chip chip-korean${choice==='korean'?' selected':''}" onclick="quickOrder('${dateStr}','korean')">🍚 ${menu.korean}</button>`:'<span style="font-size:13px;color:var(--gray-400)">메뉴 미등록</span>'}
+      ${menu.salad?`<button class="alert-menu-chip chip-salad${choice==='salad'?' selected':''}" onclick="quickOrder('${dateStr}','salad')">🥗 ${menu.salad}</button>`:''}
+      <button class="alert-menu-chip chip-none${choice==='none'?' selected':''}" onclick="quickOrder('${dateStr}','none')">✗ 불참</button>
+    </div>
+    ${savedBadge}
+  </div>`;
+}
+
+function quickOrder(date,choice){
+  const emp=ST.currentUser;
+  if(!emp){toast('로그인이 필요합니다','error');return;}
+  if(!ST.orders[date])ST.orders[date]=[];
+  const idx=ST.orders[date].findIndex(o=>o.empId===emp.id);
+  if(idx>=0)ST.orders[date][idx].choice=choice;
+  else ST.orders[date].push({empId:emp.id,choice});
+  persist();
+  const label=choice==='none'?'불참':choice==='korean'?'한식':'샐러드';
+  toast(`${fmtDate(date)} ${label} 선택 완료!`,'success');
+  renderTab();
+}
+
+// ═══════════════════════════════
+//  관리자 탭들
+// ═══════════════════════════════
+function tDashboard(){
+  const td=todayStr(),tw=thisWeekDays(),nw=nextWorkday(),mo=thisMonth();
+  const todayOrds=(ST.orders[td]||[]).filter(o=>o.choice!=='none');
+  const tmrOrds=(ST.orders[nw]||[]).filter(o=>o.choice!=='none');
+  const moOrds=Object.entries(ST.orders).filter(([d])=>d.startsWith(mo)).flatMap(([,os])=>os.filter(o=>o.choice!=='none'));
+  return `
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-num">${ST.employees.length}</div><div class="stat-label">전체 직원</div></div>
+    <div class="stat-card"><div class="stat-num">${todayOrds.length}</div><div class="stat-label">오늘(${fmtDate(td)}) 주문</div></div>
+    <div class="stat-card"><div class="stat-num">${tmrOrds.length}</div><div class="stat-label">내일(${fmtDate(nw)}) 주문</div></div>
+    <div class="stat-card"><div class="stat-num">${(moOrds.length*7000).toLocaleString()}원</div><div class="stat-label">이번 달 예상 식대</div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-title">📋 이번 주 주문 현황</div><span class="deadline-tag">매일 오후 5시 마감</span></div>
+    <div style="overflow-x:auto">
+    <table class="tbl"><thead><tr><th>직원</th>${tw.map(d=>`<th>${fmtDate(d)}${isToday(d)?'🔵':''}</th>`).join('')}<th>소계</th></tr></thead><tbody>
+    ${ST.employees.map(emp=>{
+      let cnt=0;
+      const cells=tw.map(d=>{
+        const o=(ST.orders[d]||[]).find(o=>o.empId===emp.id);
+        if(!o)return '<td class="text-muted">-</td>';
+        if(o.choice==='none')return '<td style="color:var(--gray-400)">불참</td>';
+        if(o.choice==='korean'){cnt++;return '<td style="color:var(--primary);font-weight:600">한식</td>';}
+        cnt++;return '<td style="color:var(--success);font-weight:600">샐러드</td>';
+      }).join('');
+      return `<tr><td><strong>${emp.name}</strong><div style="font-size:11px;color:var(--gray-400)">${emp.dept}</div></td>${cells}<td><strong>${cnt}식</strong></td></tr>`;
+    }).join('')}
+    </tbody></table></div>
+  </div>`;
+}
+
+function tMenuUpload(){
+  const isAuto=ST.inputMode==='auto';
+  const imgThis=ST.menuImageThis;
+  const imgNext=ST.menuImageNext;
+
+  function uploadCard(weekKey, weekLabel, imgSrc){
+    const inputId=`menu-file-${weekKey}`;
+    const statusId=`ai-status-${weekKey}`;
+    const gridId=`menu-grid-${weekKey}`;
+    return `
+    <div style="border:1.5px solid var(--gray-200);border-radius:12px;padding:16px 18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:14px;font-weight:700;color:var(--gray-800)">${weekLabel} 식단표</div>
+        ${imgSrc?`<button onclick="removeMenuImage('${weekKey}')" style="font-size:12px;color:var(--danger);border:1px solid var(--danger);background:white;border-radius:6px;padding:3px 10px;cursor:pointer">🗑 삭제</button>`:''}
+      </div>
+      ${imgSrc
+        ?`<img src="${imgSrc}" style="width:100%;max-height:260px;object-fit:contain;border-radius:8px;border:1px solid var(--gray-200);margin-bottom:10px" alt="${weekLabel} 식단표">`
+        :`<div onclick="document.getElementById('${inputId}').click()"
+            ondragover="event.preventDefault();this.style.borderColor='var(--primary)'"
+            ondragleave="this.style.borderColor='var(--gray-300)'"
+            ondrop="event.preventDefault();this.style.borderColor='var(--gray-300)';handleDropWeek(event,'${weekKey}')"
+            style="border:2px dashed var(--gray-300);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s">
+            <div style="font-size:32px;margin-bottom:8px">📷</div>
+            <p style="font-size:13px;color:var(--gray-500)"><strong style="color:var(--primary)">클릭하거나 드래그</strong>하여 사진 업로드</p>
+            <p style="font-size:11px;color:var(--gray-400);margin-top:4px">JPG, PNG 지원</p>
+          </div>`
+      }
+      <input type="file" id="${inputId}" accept="image/*" class="hidden" onchange="uploadAndAnalyze(event,'${weekKey}')">
+      ${!imgSrc?`<button onclick="document.getElementById('${inputId}').click()"
+        style="margin-top:10px;width:100%;padding:8px;border:1.5px solid var(--primary);border-radius:8px;background:var(--primary-light);color:var(--primary-dark);font-size:13px;font-weight:700;cursor:pointer">
+        📷 ${weekLabel} 사진 업로드 ${isAuto?'+ AI 자동분석':''}
+      </button>`:''}
+      <div id="${statusId}"></div>
+      <div id="${gridId}" style="margin-top:${imgSrc?'10px':'0'}"></div>
+    </div>`;
+  }
+
+  return `
+  <div class="card">
+    <div class="card-header"><div class="card-title">📋 식단표 등록</div></div>
+
+    <div class="input-mode-toggle">
+      <button class="imt-btn${isAuto?' active':''}" onclick="setInputMode('auto')">
+        🤖 AI 자동 분석
+      </button>
+      <button class="imt-btn${!isAuto?' active':''}" onclick="setInputMode('manual')">
+        ✏️ 수동 입력
+      </button>
+    </div>
+
+    ${isAuto?`
+    <div class="info-box" style="margin-bottom:14px">
+      📸 사진을 올리면 Claude AI가 메뉴를 자동 인식하고 즉시 저장합니다. 분석 후 수정도 가능합니다.
+    </div>
+    ${uploadCard('this','이번 주',imgThis)}
+    ${uploadCard('next','다음 주',imgNext)}
+    `:`
+    <p class="text-muted" style="margin-bottom:14px">이번 주 · 다음 주 요일별 한식·샐러드 메뉴를 직접 입력하세요.</p>
+    <div id="menu-grid-manual"></div>
+    <div class="save-row"><button class="btn btn-sm btn-primary" onclick="saveMenusFromInputs('manual')">💾 식단 저장</button></div>
+    `}
+  </div>`;
+}
+
+function buildMenuGrid(prefix, days){
+  const el=document.getElementById('menu-grid-'+prefix);
+  if(!el)return;
+
+  const weeks=[
+    {label:'이번 주', days:thisWeekDays()},
+    {label:'다음 주', days:nextWeekDays()},
+  ];
+
+  // auto 모드는 nextWeekDays만 (AI 분석 대상)
+  const targets = (prefix==='auto') ? [{label:'다음 주', days:nextWeekDays()}] : weeks;
+
+  let html='';
+  targets.forEach(({label, days:wdays})=>{
+    html+=`<div style="font-size:12px;font-weight:700;color:var(--gray-500);margin:12px 0 8px">${label}</div>`;
+    html+=`<div class="menu-grid" style="margin-bottom:16px">${wdays.map((d,i)=>{
+      const uid=`${prefix}-${d}`;
+      return `<div class="menu-day-wrap">
+        <div class="menu-day-header${isToday(d)?' today':''}">${fmtDate(d)}</div>
+        <div style="padding:10px;display:flex;flex-direction:column;gap:6px">
+          <div>
+            <div class="menu-input-label">🍚 한식</div>
+            <input class="menu-input-field" id="${uid}-k" placeholder="한식 메뉴">
+          </div>
+          <div>
+            <div class="menu-input-label" style="color:var(--success)">🥗 샐러드</div>
+            <input class="menu-input-field" id="${uid}-s" placeholder="샐러드 메뉴">
+          </div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  });
+  el.innerHTML=html;
+
+  // 저장된 값 채우기
+  targets.forEach(({days:wdays})=>{
+    wdays.forEach(d=>{
+      const m=ST.menus[d]||{};
+      const uid=`${prefix}-${d}`;
+      const ki=document.getElementById(`${uid}-k`);
+      const si=document.getElementById(`${uid}-s`);
+      if(ki)ki.value=m.korean||'';
+      if(si)si.value=m.salad||'';
+    });
+  });
+}
+
+function saveMenusFromInputs(prefix){
+  const weeks=[
+    {days:thisWeekDays()},
+    {days:nextWeekDays()},
+  ];
+  const targets = (prefix==='auto') ? [{days:nextWeekDays()}] : weeks;
+
+  targets.forEach(({days:wdays})=>{
+    wdays.forEach(d=>{
+      const uid=`${prefix}-${d}`;
+      const ki=document.getElementById(`${uid}-k`);
+      const si=document.getElementById(`${uid}-s`);
+      if(ki||si){
+        if(!ST.menus[d])ST.menus[d]={korean:'',salad:''};
+        if(ki)ST.menus[d].korean=ki.value.trim();
+        if(si)ST.menus[d].salad=si.value.trim();
+      }
+    });
+  });
+  persist();
+  toast('식단이 저장되었습니다 ✓','success');
+}
+
+function setInputMode(mode){
+  ST.inputMode=mode;
+  renderTab();
+}
+
+function tOrdersOverview(){
+  const weeks=[
+    {label:'이번 주', days:thisWeekDays()},
+    {label:'다음 주', days:nextWeekDays()},
+  ];
+
+  function dayBlock(d){
+    const os=ST.orders[d]||[];
+    const k=os.filter(o=>o.choice==='korean').length;
+    const s=os.filter(o=>o.choice==='salad').length;
+    const n=os.filter(o=>o.choice==='none').length;
+    const menu=ST.menus[d]||{};
+    const nameChips=(choice)=>os.filter(o=>o.choice===choice).map(o=>{
+      const e=ST.employees.find(x=>x.id===o.empId);
+      if(!e)return '';
+      const bg=choice==='korean'?'var(--primary-light)':choice==='salad'?'var(--success-light)':'var(--gray-100)';
+      const col=choice==='korean'?'var(--primary-dark)':choice==='salad'?'var(--success)':'var(--gray-500)';
+      return `<span style="display:inline-block;margin:2px 3px;padding:3px 9px;background:${bg};border-radius:12px;color:${col};font-size:12px">${e.name}</span>`;
+    }).join('');
+
+    return `
+    <tr style="${isToday(d)?'background:#fffbeb':isTomorrow(d)?'background:#eff6ff':''}">
+      <td style="padding:10px 12px;white-space:nowrap">
+        <div style="font-size:13px;font-weight:700;color:var(--gray-800)">${fmtDate(d)}</div>
+        ${menu.korean?`<div style="font-size:11px;color:var(--gray-400);margin-top:2px">🍚${menu.korean}</div>`:''}
+        ${isToday(d)?`<span style="font-size:10px;background:#fef9c3;color:#854d0e;padding:1px 6px;border-radius:8px;font-weight:700">오늘</span>`:''}
+        ${isTomorrow(d)?`<span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:1px 6px;border-radius:8px;font-weight:700">내일</span>`:''}
+      </td>
+      <td style="padding:10px 12px;text-align:center">
+        <span style="font-size:18px;font-weight:800;color:var(--gray-800)">${k+s}</span>
+        <div style="font-size:10px;color:var(--gray-400)">총</div>
+      </td>
+      <td style="padding:10px 12px;text-align:center">
+        <span style="font-size:18px;font-weight:800;color:var(--primary)">${k}</span>
+        <div style="font-size:10px;color:var(--gray-400)">한식</div>
+      </td>
+      <td style="padding:10px 12px;text-align:center">
+        <span style="font-size:18px;font-weight:800;color:var(--success)">${s}</span>
+        <div style="font-size:10px;color:var(--gray-400)">샐러드</div>
+      </td>
+      <td style="padding:10px 12px;text-align:center">
+        <span style="font-size:18px;font-weight:800;color:var(--gray-400)">${n}</span>
+        <div style="font-size:10px;color:var(--gray-400)">불참</div>
+      </td>
+      <td style="padding:10px 12px">
+        ${(k+s)>0
+          ? `<div style="display:flex;flex-wrap:wrap;gap:2px">${nameChips('korean')}${nameChips('salad')}</div>`
+          : `<span style="font-size:12px;color:var(--gray-300)">신청 없음</span>`}
+      </td>
+    </tr>`;
+  }
+
+  const weekBlocks = weeks.map(({label,days})=>`
+    <tr style="background:var(--gray-50)">
+      <td colspan="6" style="padding:9px 12px;font-size:11px;font-weight:800;color:var(--gray-500);letter-spacing:.04em;border-top:1.5px solid var(--gray-200)">${label}</td>
+    </tr>
+    ${days.map(dayBlock).join('')}
+  `).join('');
+
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title">📦 주문 현황 — 이번 주 · 다음 주</div>
+      <span class="deadline-tag">매일 오후 5시 마감</span>
+    </div>
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:var(--gray-50)">
+          <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">날짜</th>
+          <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">총</th>
+          <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--gray-200)">한식</th>
+          <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;color:var(--success);border-bottom:2px solid var(--gray-200)">샐러드</th>
+          <th style="padding:9px 12px;text-align:center;font-size:11px;font-weight:700;color:var(--gray-400);border-bottom:2px solid var(--gray-200)">불참</th>
+          <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">신청자</th>
+        </tr>
+      </thead>
+      <tbody>${weekBlocks}</tbody>
+    </table>
+    </div>
+  </div>`;
+}
+
+// ─── 월별 주문 현황 ───────────────────────────────────────────
+function tMonthlyOrders(){
+  // 주문 데이터에서 존재하는 연-월 목록 추출
+  const allMonths=[...new Set(Object.keys(ST.orders).map(d=>d.slice(0,7)))].sort().reverse();
+  if(!allMonths.length){
+    return `<div class="card"><p class="text-muted" style="text-align:center;padding:30px">아직 주문 데이터가 없습니다.</p></div>`;
+  }
+
+  // 현재 선택 월 (state에서 관리)
+  if(!ST.selectedMonth) ST.selectedMonth=thisMonth();
+  // 선택 월이 데이터에 없으면 최근 월로
+  if(!allMonths.includes(ST.selectedMonth)) ST.selectedMonth=allMonths[0];
+
+  const mo=ST.selectedMonth;
+
+  // 해당 월 날짜별 데이터 수집
+  const dayEntries=Object.entries(ST.orders)
+    .filter(([d])=>d.startsWith(mo))
+    .sort(([a],[b])=>a.localeCompare(b));
+
+  // 직원별 집계
+  const empStats=ST.employees.map(emp=>{
+    const days=dayEntries.map(([d,os])=>{
+      const o=os.find(o=>o.empId===emp.id);
+      return {d,choice:o?o.choice:''};
+    });
+    const korean=days.filter(x=>x.choice==='korean').length;
+    const salad=days.filter(x=>x.choice==='salad').length;
+    const none=days.filter(x=>x.choice==='none').length;
+    const total=korean+salad;
+    return {emp,korean,salad,none,total,days};
+  });
+
+  const totalOrders=empStats.reduce((s,e)=>s+e.total,0);
+  const totalKorean=empStats.reduce((s,e)=>s+e.korean,0);
+  const totalSalad=empStats.reduce((s,e)=>s+e.salad,0);
+  const totalAmt=totalOrders*7000;
+
+  // 날짜 헤더용
+  const dayHeaders=dayEntries.map(([d])=>`
+    <th style="padding:7px 4px;text-align:center;font-size:10px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200);min-width:46px;white-space:nowrap">
+      ${fmtDate(d).replace(/\(.\)/,'')}
+      <div style="font-size:9px;color:var(--gray-400)">${fmtDate(d).match(/\((.)\)/)?.[1]||''}</div>
+    </th>`).join('');
+
+  function cellBg(choice){
+    if(choice==='korean') return 'background:var(--primary-light);color:var(--primary-dark)';
+    if(choice==='salad')  return 'background:var(--success-light);color:var(--success)';
+    if(choice==='none')   return 'background:var(--gray-50);color:var(--gray-400)';
+    return 'color:var(--gray-200)';
+  }
+  function cellTxt(choice){
+    if(choice==='korean') return '밥';
+    if(choice==='salad')  return '샐';
+    if(choice==='none')   return '✗';
+    return '·';
+  }
+
+  const empRows=empStats.map(({emp,korean,salad,none,total,days})=>{
+    const cells=days.map(({choice})=>`
+      <td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--gray-100)">
+        <span style="display:inline-block;padding:2px 6px;border-radius:6px;font-size:11px;font-weight:700;${cellBg(choice)}">${cellTxt(choice)}</span>
+      </td>`).join('');
+    return `<tr>
+      <td style="padding:9px 12px;white-space:nowrap;border-bottom:1px solid var(--gray-100)">
+        <div style="font-size:13px;font-weight:600;color:var(--gray-800)">${emp.name}</div>
+        <div style="font-size:11px;color:var(--gray-400)">${emp.dept}</div>
+      </td>
+      ${cells}
+      <td style="padding:9px 12px;text-align:center;border-bottom:1px solid var(--gray-100);font-weight:700;color:var(--primary)">${total}</td>
+      <td style="padding:9px 12px;text-align:center;border-bottom:1px solid var(--gray-100);font-size:12px;color:var(--primary)">${korean}</td>
+      <td style="padding:9px 12px;text-align:center;border-bottom:1px solid var(--gray-100);font-size:12px;color:var(--success)">${salad}</td>
+      <td style="padding:9px 12px;text-align:right;border-bottom:1px solid var(--gray-100);font-weight:700;color:var(--danger)">${(total*7000).toLocaleString()}원</td>
+    </tr>`;
+  }).join('');
+
+  // 합계 행
+  const totalRow=`<tr style="background:var(--gray-50)">
+    <td style="padding:10px 12px;font-size:13px;font-weight:700;color:var(--gray-800);border-top:2px solid var(--gray-200)">합계</td>
+    ${dayEntries.map(([d])=>{
+      const os=ST.orders[d]||[];
+      const k=os.filter(o=>o.choice==='korean').length;
+      const s=os.filter(o=>o.choice==='salad').length;
+      return `<td style="padding:8px 4px;text-align:center;border-top:2px solid var(--gray-200)">
+        <div style="font-size:12px;font-weight:700;color:var(--gray-700)">${k+s}</div>
+        <div style="font-size:9px;color:var(--gray-400)">${k?`밥${k}`:''}${s?`샐${s}`:''}</div>
+      </td>`;
+    }).join('')}
+    <td style="padding:10px 12px;text-align:center;border-top:2px solid var(--gray-200);font-weight:800;color:var(--primary)">${totalOrders}</td>
+    <td style="padding:10px 12px;text-align:center;border-top:2px solid var(--gray-200);font-weight:700;color:var(--primary)">${totalKorean}</td>
+    <td style="padding:10px 12px;text-align:center;border-top:2px solid var(--gray-200);font-weight:700;color:var(--success)">${totalSalad}</td>
+    <td style="padding:10px 12px;text-align:right;border-top:2px solid var(--gray-200);font-weight:800;color:var(--danger)">${totalAmt.toLocaleString()}원</td>
+  </tr>`;
+
+  // 월 선택 드롭다운
+  const monthSelect=`<select onchange="ST.selectedMonth=this.value;renderTab()"
+    style="padding:6px 10px;border:1.5px solid var(--gray-200);border-radius:8px;font-size:13px;font-weight:600;color:var(--gray-700);background:white;cursor:pointer">
+    ${allMonths.map(m=>`<option value="${m}"${m===mo?' selected':''}>${m}</option>`).join('')}
+  </select>`;
+
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title">📈 월별 주문 현황</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        ${monthSelect}
+      </div>
+    </div>
+
+    <div class="stats-grid" style="margin-bottom:16px">
+      <div class="stat-card"><div class="stat-num">${totalOrders}</div><div class="stat-label">총 주문</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--primary)">${totalKorean}</div><div class="stat-label">한식</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--success)">${totalSalad}</div><div class="stat-label">샐러드</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--danger);font-size:20px">${totalAmt.toLocaleString()}원</div><div class="stat-label">총 식대</div></div>
+    </div>
+
+    <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="background:var(--gray-50)">
+          <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200);min-width:80px">직원</th>
+          ${dayHeaders}
+          <th style="padding:7px 8px;text-align:center;font-size:11px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--gray-200);min-width:36px">합</th>
+          <th style="padding:7px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--primary);border-bottom:2px solid var(--gray-200);min-width:32px">밥</th>
+          <th style="padding:7px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--success);border-bottom:2px solid var(--gray-200);min-width:32px">샐</th>
+          <th style="padding:7px 8px;text-align:right;font-size:11px;font-weight:700;color:var(--danger);border-bottom:2px solid var(--gray-200);min-width:72px">식대</th>
+        </tr>
+      </thead>
+      <tbody>${empRows}${totalRow}</tbody>
+    </table>
+    </div>
+
+    <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--gray-100);display:flex;gap:12px;font-size:12px;color:var(--gray-500);flex-wrap:wrap">
+      <span><span style="display:inline-block;padding:1px 6px;border-radius:4px;background:var(--primary-light);color:var(--primary-dark);font-weight:700;margin-right:3px">밥</span>한식</span>
+      <span><span style="display:inline-block;padding:1px 6px;border-radius:4px;background:var(--success-light);color:var(--success);font-weight:700;margin-right:3px">샐</span>샐러드</span>
+      <span><span style="display:inline-block;padding:1px 6px;border-radius:4px;background:var(--gray-50);color:var(--gray-400);font-weight:700;margin-right:3px">✗</span>불참</span>
+      <span style="color:var(--gray-300)">· 미신청</span>
+    </div>
+  </div>`;
+}
+
+function tSettlement(){
+  const mo=thisMonth(),lw=lastWorkdayOfMonth(mo),acc=ST.account;
+  return `<div class="card">
+    <div class="card-header"><div class="card-title">💰 ${mo} 정산 관리</div>
+      <button class="btn btn-sm btn-outline" onclick="openModal('account-modal')">계좌 설정</button></div>
+    ${acc.holder?`<div class="info-box">💳 예금주: <strong>${acc.holder}</strong> | ${acc.bank} | <strong>${acc.number}</strong></div>`
+      :`<div class="info-box" style="background:#fff7ed;border-color:#fed7aa;color:#9a3412">⚠️ 계좌 정보를 먼저 설정해 주세요.</div>`}
+    <div style="margin-bottom:12px;font-size:13px;color:var(--gray-500)">정산 기한: <strong>${fmtDate(lw)}</strong></div>
+    <table class="tbl"><thead><tr><th>직원</th><th>부서</th><th>주문 횟수</th><th>식대</th></tr></thead><tbody>
+    ${ST.employees.map(emp=>{
+      const cnt=Object.entries(ST.orders).filter(([d])=>d.startsWith(mo)).flatMap(([,os])=>os).filter(o=>o.empId===emp.id&&o.choice!=='none').length;
+      return `<tr><td><strong>${emp.name}</strong></td><td>${emp.dept}</td><td>${cnt}식</td><td class="amt">${(cnt*7000).toLocaleString()}원</td></tr>`;
+    }).join('')}
+    </tbody></table>
+    <div class="save-row"><button class="btn btn-sm btn-success" onclick="genSettlement()">📢 정산 공지 생성</button></div>
+    <div id="settle-preview"></div>
+  </div>`;
+}
+
+function tEmployees(){
+  return `<div class="card">
+    <div class="card-header"><div class="card-title">👥 직원 목록</div>
+      <button class="btn btn-sm btn-primary" onclick="openModal('employee-modal')">+ 직원 추가</button></div>
+    <div class="emp-list">
+    ${ST.employees.map(emp=>`
+      <div class="emp-row">
+        <div class="emp-info">
+          <div class="emp-av">${emp.name[0]}</div>
+          <div><div class="emp-name">${emp.name}</div><div class="emp-dept">${emp.dept}</div></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="role-tag ${emp.role==='admin'?'role-admin':'role-user'}">${emp.role==='admin'?'관리자':'직원'}</span>
+          <button class="btn btn-sm" style="background:var(--danger-light);color:var(--danger);border:none;font-size:12px;padding:5px 10px;border-radius:6px" onclick="removeEmp(${emp.id})">삭제</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function tNotice(){
+  const nd=nextWorkday(),nw=nextWeekDays();
+  return `<div class="card">
+    <div class="card-header"><div class="card-title">📢 공지 메시지 생성</div></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="btn btn-outline btn-sm" style="width:auto;text-align:left" onclick="genMenuNotice()">📋 다음 주 식단표 공지 생성</button>
+      <button class="btn btn-outline btn-sm" style="width:auto;text-align:left" onclick="genOrderNotice()">✅ 내일(${fmtDate(nd)}) 주문 수렴 공지 생성</button>
+      <button class="btn btn-outline btn-sm" style="width:auto;text-align:left" onclick="genSettleFull()">💰 월말 정산 공지 생성</button>
+    </div>
+    <div id="notice-out" class="hidden mt-12">
+      <div class="sdiv"><span>생성된 공지</span></div>
+      <div class="notice-box" id="notice-text"></div>
+      <div class="save-row"><button class="btn btn-sm btn-primary" onclick="copyNotice()">📋 복사</button></div>
+    </div>
+  </div>`;
+}
+
+// ═══════════════════════════════
+//  사용자 탭들
+// ═══════════════════════════════
+function tUserHome(){
+  const td=todayStr(), nd=nextWorkday();
+  const emp=ST.currentUser;
+
+  // 오늘·내일 알림 배너
+  const todayMenu=ST.menus[td]||{};
+  const tmrMenu=ST.menus[nd]||{};
+  const hasTodayMenu=todayMenu.korean||todayMenu.salad;
+  const hasTmrMenu=tmrMenu.korean||tmrMenu.salad;
+
+  // 이번 주 + 다음 주 표 생성
+  const weeks=[
+    {label:'이번 주', days:thisWeekDays()},
+    {label:'다음 주', days:nextWeekDays()},
+  ];
+
+  // 이번달 신청 합계
+  const mo=thisMonth();
+  const totalCnt=Object.entries(ST.orders)
+    .filter(([d])=>d.startsWith(mo))
+    .flatMap(([,os])=>os)
+    .filter(o=>o.empId===emp.id&&o.choice!=='none').length;
+
+  function choiceBadge(c){
+    if(c==='korean') return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:var(--primary-light);color:var(--primary-dark)">🍚 한식</span>`;
+    if(c==='salad')  return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:var(--success-light);color:var(--success)">🥗 샐러드</span>`;
+    if(c==='none')   return `<span style="display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;background:var(--gray-100);color:var(--gray-500)">✗ 불참</span>`;
+    return `<span style="padding:3px 10px;border-radius:20px;font-size:12px;color:var(--gray-300);background:var(--gray-50)">미선택</span>`;
+  }
+
+  const tableRows=weeks.map(({label,days})=>{
+    const weekCnt=days.filter(d=>{
+      const o=(ST.orders[d]||[]).find(o=>o.empId===emp.id);
+      return o&&o.choice!=='none';
+    }).length;
+    return `
+      <tr>
+        <td colspan="4" style="padding:10px 12px 4px;background:var(--gray-50);border-top:1.5px solid var(--gray-200)">
+          <span style="font-size:11px;font-weight:800;color:var(--gray-500);letter-spacing:.04em">${label}</span>
+          <span style="font-size:11px;color:var(--gray-400);margin-left:8px">${weekCnt}식 신청</span>
+        </td>
+      </tr>
+      ${days.map(d=>{
+        const o=(ST.orders[d]||[]).find(o=>o.empId===emp.id);
+        const c=o?o.choice:'';
+        const m=ST.menus[d]||{};
+        const isT=isToday(d), isN=isTomorrow(d);
+        const rowBg=isT?'background:#fffbeb':isN?'background:#eff6ff':'';
+        return `<tr style="${rowBg}">
+          <td style="padding:10px 12px;font-size:13px;font-weight:${isT||isN?'700':'400'};color:${isT?'#92400e':isN?'var(--primary-dark)':'var(--gray-700)'}">
+            ${fmtDate(d)}
+            ${isT?`<span style="margin-left:6px;font-size:10px;background:#fef9c3;color:#854d0e;padding:2px 6px;border-radius:10px;font-weight:700">오늘</span>`:''}
+            ${isN?`<span style="margin-left:6px;font-size:10px;background:#dbeafe;color:#1d4ed8;padding:2px 6px;border-radius:10px;font-weight:700">내일</span>`:''}
+          </td>
+          <td style="padding:10px 12px;font-size:12px;color:var(--gray-500);max-width:120px">
+            ${m.korean?`🍚 ${m.korean}`:'<span style="color:var(--gray-300)">미등록</span>'}
+          </td>
+          <td style="padding:10px 12px;font-size:12px;color:var(--success)">
+            ${m.salad?`🥗 ${m.salad}`:''}
+          </td>
+          <td style="padding:10px 12px;text-align:right">${choiceBadge(c)}</td>
+        </tr>`;
+      }).join('')}`;
+  }).join('');
+
+  return `
+  ${hasTodayMenu?alertBannerHTML(td,'🔵 오늘의 메뉴','alert-banner alert-today','🍱'):''}
+  ${hasTmrMenu?alertBannerHTML(nd,'⏰ 내일 메뉴 — 오후 5시까지 신청!','alert-banner alert-tomorrow','🥗'):''}
+
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">📅 나의 식사 신청 현황</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;color:var(--gray-500)">이번 달 <strong style="color:var(--primary)">${totalCnt}식</strong> 신청 · <strong style="color:var(--danger)">${(totalCnt*7000).toLocaleString()}원</strong></span>
+        <button class="btn btn-sm" style="background:var(--primary-light);color:var(--primary-dark);border:none;font-size:12px;font-weight:700;padding:5px 12px;border-radius:8px;cursor:pointer" onclick="switchTab('user-order')">신청하기 →</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse">
+        <thead>
+          <tr style="background:var(--gray-50)">
+            <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">날짜</th>
+            <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">한식 메뉴</th>
+            <th style="padding:9px 12px;text-align:left;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">샐러드</th>
+            <th style="padding:9px 12px;text-align:right;font-size:11px;font-weight:700;color:var(--gray-500);border-bottom:2px solid var(--gray-200)">내 신청</th>
+          </tr>
+        </thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+    <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--gray-100);font-size:12px;color:var(--gray-400);text-align:center">
+      신청 변경은 <strong style="color:var(--primary);cursor:pointer" onclick="switchTab('user-order')">식사 신청 탭</strong>에서 가능합니다 · 매일 오후 5시 마감
+    </div>
+  </div>`;
+}
+
+function tUserMenu(){
+  const weeks=[
+    {key:'this', label:'이번 주', days:thisWeekDays(), img:ST.menuImageThis},
+    {key:'next', label:'다음 주', days:nextWeekDays(), img:ST.menuImageNext},
+  ];
+
+  const sections = weeks.map(({key,label,days,img})=>{
+    const hasMenu = days.some(d=>ST.menus[d]?.korean||ST.menus[d]?.salad);
+
+    const menuGrid = hasMenu ? `
+      <div class="menu-grid" style="margin-top:14px">
+        ${days.map(d=>{
+          const m=ST.menus[d]||{};
+          return `<div class="menu-day">
+            <div class="menu-day-header${isToday(d)?' today':''}">${fmtDate(d)}</div>
+            <div class="menu-day-body">
+              ${m.korean?`<div class="menu-type">한식</div><div class="menu-korean">${m.korean}</div>`:''}
+              ${m.salad?`<div class="menu-type" style="color:var(--success);margin-top:6px">샐러드</div><div class="menu-salad">${m.salad}</div>`:''}
+              ${!m.korean&&!m.salad?'<div class="text-muted" style="font-size:11px">미등록</div>':''}
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : '';
+
+    return `
+    <div style="margin-bottom:20px">
+      <div style="font-size:13px;font-weight:800;color:var(--gray-600);margin-bottom:10px;display:flex;align-items:center;gap:8px">
+        <span style="display:inline-block;width:4px;height:16px;background:var(--primary);border-radius:2px"></span>
+        ${label} 식단표
+      </div>
+      ${img
+        ? `<img src="${img}"
+             style="width:100%;max-height:420px;object-fit:contain;border-radius:12px;border:1px solid var(--gray-200);cursor:pointer;background:var(--gray-50)"
+             alt="${label} 식단표"
+             onclick="this.style.maxHeight=this.style.maxHeight==='none'?'420px':'none'"
+             title="클릭하면 전체 크기로 볼 수 있습니다">`
+        : `<div style="padding:28px;text-align:center;background:var(--gray-50);border:1.5px dashed var(--gray-200);border-radius:12px;color:var(--gray-400)">
+             <div style="font-size:28px;margin-bottom:8px">📋</div>
+             <div style="font-size:13px">${label} 식단표가 아직 등록되지 않았습니다</div>
+           </div>`
+      }
+      ${menuGrid}
+    </div>`;
+  }).join('<hr style="border:none;border-top:1px solid var(--gray-200);margin:4px 0 20px">');
+
+  return `<div class="card">
+    <div class="card-header">
+      <div class="card-title">🍽️ 식단표</div>
+      <span style="font-size:11px;color:var(--gray-400)">사진 클릭 시 전체 크기</span>
+    </div>
+    ${sections}
+  </div>`;
+}
+
+function tUserOrder(){
+  const emp=ST.currentUser, nw=nextWorkday();
+  const weeks=[
+    {label:'이번 주', days:thisWeekDays()},
+    {label:'다음 주', days:nextWeekDays()},
+  ];
+  const orderRows=weeks.map(({label,days})=>`
+    <div style="font-size:12px;font-weight:700;color:var(--gray-500);margin:14px 0 8px">${label}</div>
+    ${days.map(d=>{
+      const o=(ST.orders[d]||[]).find(o=>o.empId===emp.id);
+      const c=o?o.choice:'';
+      const m=ST.menus[d]||{};
+      return `<div class="order-day-row${c&&c!=='none'?' submitted':''}">
+        <div>
+          <div class="order-day-label">${fmtDate(d)}${isToday(d)?' 🔵':''}${isTomorrow(d)?' ⏰':''}</div>
+          ${m.korean?`<div style="font-size:11px;color:var(--gray-400);margin-top:2px">🍚 ${m.korean} / 🥗 ${m.salad||'샐러드'}</div>`:''}
+        </div>
+        <div class="order-options">
+          <button class="option-btn${c==='none'?' sel-none':''}" onclick="quickOrder('${d}','none')">불참</button>
+          <button class="option-btn${c==='korean'?' sel-korean':''}" onclick="quickOrder('${d}','korean')">🍚 한식</button>
+          <button class="option-btn${c==='salad'?' sel-salad':''}" onclick="quickOrder('${d}','salad')">🥗 샐러드</button>
+        </div>
+      </div>`;
+    }).join('')}
+  `).join('');
+
+  return `<div class="card">
+    <div class="card-header"><div class="card-title">✅ 식사 신청</div><span class="deadline-tag">매일 오후 5시 마감</span></div>
+    <div class="info-box">내일(${fmtDate(nw)}) 식사 신청이 오늘 오후 5시에 마감됩니다.</div>
+    <div class="order-form">${orderRows}</div>
+  </div>`;
+}
+
+function tUserSettlement(){
+  const emp=ST.currentUser,mo=thisMonth(),acc=ST.account,lw=lastWorkdayOfMonth(mo);
+  const cnt=Object.entries(ST.orders).filter(([d])=>d.startsWith(mo)).flatMap(([,os])=>os).filter(o=>o.empId===emp.id&&o.choice!=='none').length;
+  return `<div class="card">
+    <div class="card-header"><div class="card-title">💰 나의 식대 정산 (${mo})</div></div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">${cnt}</div><div class="stat-label">이번 달 주문</div></div>
+      <div class="stat-card"><div class="stat-num" style="color:var(--danger)">${(cnt*7000).toLocaleString()}원</div><div class="stat-label">납부 금액</div></div>
+    </div>
+    ${acc.holder?`<div class="info-box" style="background:#fef9c3;border-color:#fbbf24;color:#854d0e">
+      💳 <strong>정산 계좌</strong><br>예금주: ${acc.holder} | ${acc.bank} | <strong>${acc.number}</strong><br>납부 기한: ${fmtDate(lw)}
+    </div>`:``}
+    <div class="sdiv"><span>이번 달 상세</span></div>
+    <table class="tbl"><thead><tr><th>날짜</th><th>선택</th><th>금액</th></tr></thead><tbody>
+    ${Object.entries(ST.orders).filter(([d])=>d.startsWith(mo))
+      .flatMap(([d,os])=>os.filter(o=>o.empId===emp.id&&o.choice!=='none').map(o=>({d,o})))
+      .map(({d,o})=>`<tr><td>${fmtDate(d)}</td><td>${o.choice==='korean'?'한식':'샐러드'}</td><td class="amt">7,000원</td></tr>`)
+      .join('')||'<tr><td colspan="3" class="text-muted" style="text-align:center">내역 없음</td></tr>'}
+    </tbody></table>
+  </div>`;
+}
+
+// ═══════════════════════════════
+//  API 키 관리 (제거됨 - openModal 호환용 더미)
+// ═══════════════════════════════
+function updateApiKeyIndicator(){}
+function saveApiKey(){}
+function clearApiKey(){}
+
+// ═══════════════════════════════
+//  AI 이미지 분석
+// ═══════════════════════════════
+
+// 이미지를 최대 1400px로 리사이즈 후 base64 반환
+function resizeImage(dataUrl, maxPx){
+  return new Promise(resolve=>{
+    const img=new Image();
+    img.onload=()=>{
+      let {width:w,height:h}=img;
+      if(w<=maxPx&&h<=maxPx){resolve(dataUrl);return;}
+      const scale=maxPx/Math.max(w,h);
+      w=Math.round(w*scale); h=Math.round(h*scale);
+      const cv=document.createElement('canvas');
+      cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      resolve(cv.toDataURL('image/jpeg',0.85));
+    };
+    img.onerror=()=>resolve(dataUrl);
+    img.src=dataUrl;
+  });
+}
+
+// Claude API 호출 — claude.ai 아티팩트 내장 방식 우선, fallback fetch
+async function callClaude(imageB64, promptText){
+  // ① claude.ai 아티팩트 환경: window.claude.complete 사용
+  if(typeof window !== 'undefined' && window.claude && typeof window.claude.complete === 'function'){
+    const result = await window.claude.complete(
+      [{ role:'user', content:[
+        {type:'image', source:{type:'base64', media_type:'image/jpeg', data:imageB64}},
+        {type:'text',  text:promptText}
+      ]}],
+      {model:'claude-sonnet-4-6', max_tokens:2048}
+    );
+    // window.claude.complete 반환값: string 또는 {content:[...]}
+    if(typeof result === 'string') return result;
+    if(result?.content) return result.content.map(c=>c.text||'').join('');
+    return String(result||'');
+  }
+
+  // ② fallback: 직접 fetch (claude.ai 외부 환경 or 아티팩트에서 위 방법 실패 시)
+  const resp = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{
+      'Content-Type':'application/json',
+      'anthropic-version':'2023-06-01',
+      'anthropic-dangerous-direct-browser-access':'true'
+    },
+    body: JSON.stringify({
+      model:'claude-sonnet-4-6',
+      max_tokens:2048,
+      messages:[{role:'user', content:[
+        {type:'image', source:{type:'base64', media_type:'image/jpeg', data:imageB64}},
+        {type:'text',  text:promptText}
+      ]}]
+    })
+  });
+  if(!resp.ok){
+    const errJson = await resp.json().catch(()=>({}));
+    throw new Error(errJson?.error?.message || `서버 오류 (HTTP ${resp.status})`);
+  }
+  const data = await resp.json();
+  if(data.error) throw new Error(data.error.message||'API 오류');
+  return (data.content||[]).map(c=>c.text||'').join('');
+}
+
+async function uploadAndAnalyze(e, weekKey='next'){
+  const file = e.target.files[0]; if(!file) return;
+  e.target.value = '';
+
+  const reader = new FileReader();
+  reader.onload = async ev=>{
+    // 1) 이미지 저장 (이번주 or 다음주)
+    const imgKey = weekKey==='this' ? 'menuImageThis' : 'menuImageNext';
+    ST[imgKey] = ev.target.result;
+    persist();
+
+    // 분석 대상 날짜
+    const days = weekKey==='this' ? thisWeekDays() : nextWeekDays();
+    const weekLabel = weekKey==='this' ? '이번 주' : '다음 주';
+
+    const statusEl = document.getElementById(`ai-status-${weekKey}`);
+    if(!statusEl) return;
+
+    statusEl.innerHTML = `<div class="ai-analyzing" style="margin-top:10px">
+      <div class="ai-spinner"></div>
+      <div>
+        <strong>${weekLabel} 식단표를 분석 중입니다...</strong><br>
+        <span style="font-size:12px;color:var(--gray-500)">AI가 요일별 메뉴를 인식합니다</span>
+      </div>
+    </div>`;
+
+    // 분석 후 카드 이미지 갱신 (사진 바로 표시)
+    renderTab();
+
+    try{
+      const resized = await resizeImage(ev.target.result, 1400);
+      const b64 = resized.split(',')[1];
+
+      const DAY_NAMES = ['월','화','수','목','금'];
+      const dateList = days.map((d,i)=>`${DAY_NAMES[i]}요일(${d})`).join(', ');
+
+      const prompt =
+`아래 식단표 사진을 분석해서 날짜별 메뉴를 추출하세요.
+
+분석 대상(${weekLabel}): ${dateList}
+
+**반드시 아래 JSON만 응답**하세요. 설명 없이 JSON만:
+{
+  "${days[0]}":{"korean":"한식메뉴","salad":"샐러드메뉴"},
+  "${days[1]}":{"korean":"한식메뉴","salad":"샐러드메뉴"},
+  "${days[2]}":{"korean":"한식메뉴","salad":"샐러드메뉴"},
+  "${days[3]}":{"korean":"한식메뉴","salad":"샐러드메뉴"},
+  "${days[4]}":{"korean":"한식메뉴","salad":"샐러드메뉴"}
+}
+
+규칙:
+- 사진에서 요일별 메뉴를 찾아 정확히 입력
+- 메뉴가 없는 날은 빈 문자열("")
+- 샐러드가 없으면 "샐러드"로 입력
+- 사진에 보이는 메뉴명 그대로 입력`;
+
+      const raw = await callClaude(b64, prompt);
+
+      const jsonMatch = raw.match(/```(?:json)?\s*([\s\S]*?)```/s) || raw.match(/(\{[\s\S]*\})/s);
+      if(!jsonMatch) throw new Error('식단 정보를 인식하지 못했습니다. 사진이 선명한지 확인해 주세요.');
+      const parsed = JSON.parse((jsonMatch[1]||jsonMatch[0]).trim());
+
+      let updated = 0;
+      days.forEach(d=>{
+        if(parsed[d]){
+          ST.menus[d]={
+            korean:(parsed[d].korean||'').trim(),
+            salad: (parsed[d].salad||'').trim()
+          };
+          updated++;
+        }
+      });
+      persist();
+
+      // 결과 미리보기
+      const previewRows = days.map((d,i)=>{
+        const m=ST.menus[d]||{};
+        return `<tr>
+          <td style="padding:5px 10px;font-size:12px;font-weight:700;color:var(--gray-600)">${DAY_NAMES[i]}</td>
+          <td style="padding:5px 10px;font-size:12px;color:var(--gray-700)">${m.korean?`🍚 ${m.korean}`:'<span style="color:var(--gray-300)">—</span>'}</td>
+          <td style="padding:5px 10px;font-size:12px;color:var(--success)">${m.salad?`🥗 ${m.salad}`:'<span style="color:var(--gray-300)">—</span>'}</td>
+        </tr>`;
+      }).join('');
+
+      // status 엘리먼트 재조회 (renderTab 후 DOM 바뀜)
+      const statusEl2 = document.getElementById(`ai-status-${weekKey}`);
+      if(statusEl2){
+        statusEl2.innerHTML = `<div class="ai-result-box" style="margin-top:10px">
+          <div class="ai-result-title">✅ ${weekLabel} 분석 완료! ${updated}일 자동 저장됨</div>
+          <table style="width:100%;border-collapse:collapse;margin-top:8px;background:var(--gray-50);border-radius:8px;overflow:hidden">
+            ${previewRows}
+          </table>
+          <p style="font-size:11px;color:var(--gray-400);margin-top:8px">아래 입력칸에서 수정 후 💾 저장 버튼을 눌러주세요.</p>
+        </div>`;
+      }
+
+      // 입력칸 자동 채우기
+      buildMenuGridWeek(weekKey, days);
+
+    }catch(err){
+      console.error('[AI분석 오류]', err);
+      const statusEl2 = document.getElementById(`ai-status-${weekKey}`);
+      if(statusEl2){
+        statusEl2.innerHTML = `<div style="padding:12px 14px;background:var(--danger-light);border:1.5px solid #fca5a5;border-radius:var(--radius);margin-top:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--danger);margin-bottom:4px">⚠️ AI 분석 실패</div>
+          <div style="font-size:12px;color:#7f1d1d">${err.message}</div>
+          <div style="font-size:11px;color:var(--gray-500);margin-top:6px">아래 입력칸에서 직접 입력하거나 ✏️ 수동 입력 탭을 이용하세요.</div>
+        </div>`;
+        buildMenuGridWeek(weekKey, days);
+      }
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeMenuImage(weekKey='next'){
+  if(!confirm('사진을 삭제하시겠습니까?'))return;
+  if(weekKey==='this') ST.menuImageThis=null;
+  else ST.menuImageNext=null;
+  persist(); renderTab(); toast('사진이 삭제되었습니다');
+}
+
+function handleDropWeek(e, weekKey){
+  const file=e.dataTransfer?.files?.[0];
+  if(file&&file.type.startsWith('image/')){
+    uploadAndAnalyze({target:{files:[file]},value:''},weekKey);
+  }
+}
+
+function handleDrop(e){
+  handleDropWeek(e,'next');
+}
+
+// ═══════════════════════════════
+//  메뉴 저장 (레거시 호환)
+// ═══════════════════════════════
+function updMenu(date,type,val){if(!ST.menus[date])ST.menus[date]={korean:'',salad:''};ST.menus[date][type]=val;}
+function saveMenus(){persist();toast('식단이 저장되었습니다','success');}
+
+// ═══════════════════════════════
+//  직원 관리
+// ═══════════════════════════════
+function removeEmp(id){
+  if(!confirm('정말 삭제하시겠습니까?'))return;
+  ST.employees=ST.employees.filter(e=>e.id!==id);
+  persist();renderTab();toast('삭제되었습니다');
+}
+function addEmployee(){
+  const name=document.getElementById('emp-name').value.trim();
+  const dept=document.getElementById('emp-dept').value.trim();
+  const role=document.getElementById('emp-role').value;
+  const pw=document.getElementById('emp-pw').value;
+  if(!name||!pw){toast('이름과 비밀번호를 입력하세요','error');return;}
+  ST.employees.push({id:Date.now(),name,dept,role,pw});
+  persist();closeModal();renderTab();toast(`${name} 직원이 추가되었습니다`,'success');
+}
+
+// ═══════════════════════════════
+//  계좌
+// ═══════════════════════════════
+function saveAccount(){
+  ST.account={
+    holder:document.getElementById('acc-holder').value,
+    bank:document.getElementById('acc-bank').value,
+    number:document.getElementById('acc-number').value,
+  };
+  persist();closeModal();renderTab();toast('계좌 정보가 저장되었습니다','success');
+}
+
+// ═══════════════════════════════
+//  공지 생성
+// ═══════════════════════════════
+function genMenuNotice(){
+  const nw=nextWeekDays();
+  let t=`🍱 [다음 주 식단표 공지]\n\n`;
+  nw.forEach(d=>{const m=ST.menus[d]||{};t+=`📅 ${fmtDate(d)}\n  🍚 한식: ${m.korean||'미정'}\n  🥗 샐러드: ${m.salad||'미정'}\n\n`;});
+  t+=`매일 오후 5시까지 다음날 식사 여부를 시스템에서 선택해 주세요.`;
+  showNotice(t);
+}
+function genOrderNotice(){
+  const nd=nextWorkday(),m=ST.menus[nd]||{};
+  let t=`✅ [식사 신청 안내 - ${fmtDate(nd)}]\n\n내일 ${fmtDate(nd)} 식사 신청을 받습니다.\n\n📋 메뉴\n  🍚 한식: ${m.korean||'미정'}\n  🥗 샐러드: ${m.salad||'미정'}\n\n⏰ 마감: 오늘 오후 5시까지\n👉 점심 주문 앱에서 선택해 주세요.`;
+  showNotice(t);
+}
+function buildSettleText(){
+  const mo=thisMonth(),acc=ST.account,lw=lastWorkdayOfMonth(mo);
+  let t=`💰 [${mo} 식대 정산 안내]\n\n이번 달 식사 횟수 및 납부 금액 안내드립니다.\n\n`;
+  ST.employees.forEach(emp=>{
+    const cnt=Object.entries(ST.orders).filter(([d])=>d.startsWith(mo)).flatMap(([,os])=>os).filter(o=>o.empId===emp.id&&o.choice!=='none').length;
+    t+=`👤 ${emp.name}(${emp.dept}): ${cnt}식 → ${(cnt*7000).toLocaleString()}원\n`;
+  });
+  t+=`\n📌 1식 7,000원\n⏰ 납부 기한: ${fmtDate(lw)}\n`;
+  if(acc.holder)t+=`\n💳 정산 계좌\n  예금주: ${acc.holder}\n  은행: ${acc.bank}\n  계좌번호: ${acc.number}`;
+  return t;
+}
+function genSettlement(){
+  const p=document.getElementById('settle-preview');
+  if(p){p.innerHTML=`<div class="notice-box mt-12" style="white-space:pre-wrap">${buildSettleText()}</div>`;}
+}
+function genSettleFull(){showNotice(buildSettleText());}
+function showNotice(t){
+  document.getElementById('notice-text').textContent=t;
+  document.getElementById('notice-out').className='mt-12';
+}
+function copyNotice(){
+  navigator.clipboard.writeText(document.getElementById('notice-text').textContent)
+    .then(()=>toast('클립보드에 복사되었습니다!','success'));
+}
+
+// ═══════════════════════════════
+//  모달
+// ═══════════════════════════════
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='account-modal'){
+    document.getElementById('acc-holder').value=ST.account.holder||'';
+    document.getElementById('acc-bank').value=ST.account.bank||'';
+    document.getElementById('acc-number').value=ST.account.number||'';
+  }
+  if(id==='employee-modal'){
+    document.getElementById('emp-name').value='';
+    document.getElementById('emp-dept').value='';
+    document.getElementById('emp-pw').value='';
+  }
+}
+function closeModal(){document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));}
+document.querySelectorAll('.modal-overlay').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal();}));
+
+// ═══════════════════════════════
+//  XSS 방지
+// ═══════════════════════════════
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+// ═══════════════════════════════
+//  postRender (동적 이벤트)
+// ═══════════════════════════════
+function postRender(){
+  if(ST.activeTab==='menu-upload'){
+    if(ST.inputMode==='auto'){
+      buildMenuGridWeek('this', thisWeekDays());
+      buildMenuGridWeek('next', nextWeekDays());
+    } else {
+      buildMenuGrid('manual');
+    }
+  }
+}
+
+// 주별 입력 그리드 (AI 자동 탭 내부)
+function buildMenuGridWeek(weekKey, days){
+  const el=document.getElementById(`menu-grid-${weekKey}`);
+  if(!el) return;
+  const DAY_NAMES=['월','화','수','목','금'];
+  el.innerHTML=`
+    <div style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+      <div style="font-size:12px;font-weight:700;color:var(--gray-600)">메뉴 확인 · 수정</div>
+      <button class="btn btn-sm btn-primary" style="font-size:12px;padding:5px 12px" onclick="saveMenusFromInputsWeek('${weekKey}')">💾 저장</button>
+    </div>
+    <div class="menu-grid">${days.map((d,i)=>{
+      const m=ST.menus[d]||{};
+      return `<div class="menu-day-wrap">
+        <div class="menu-day-header${isToday(d)?' today':''}">${fmtDate(d)}</div>
+        <div style="padding:8px;display:flex;flex-direction:column;gap:5px">
+          <div>
+            <div class="menu-input-label">🍚 한식</div>
+            <input class="menu-input-field" id="${weekKey}-${d}-k" placeholder="한식 메뉴">
+          </div>
+          <div>
+            <div class="menu-input-label" style="color:var(--success)">🥗 샐러드</div>
+            <input class="menu-input-field" id="${weekKey}-${d}-s" placeholder="샐러드">
+          </div>
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  // 값 채우기
+  days.forEach(d=>{
+    const m=ST.menus[d]||{};
+    const ki=document.getElementById(`${weekKey}-${d}-k`);
+    const si=document.getElementById(`${weekKey}-${d}-s`);
+    if(ki) ki.value=m.korean||'';
+    if(si) si.value=m.salad||'';
+  });
+}
+
+function saveMenusFromInputsWeek(weekKey){
+  const days = weekKey==='this' ? thisWeekDays() : nextWeekDays();
+  days.forEach(d=>{
+    const ki=document.getElementById(`${weekKey}-${d}-k`);
+    const si=document.getElementById(`${weekKey}-${d}-s`);
+    if(ki||si){
+      if(!ST.menus[d]) ST.menus[d]={korean:'',salad:''};
+      if(ki) ST.menus[d].korean=ki.value.trim();
+      if(si) ST.menus[d].salad=si.value.trim();
+    }
+  });
+  persist();
+  toast('식단이 저장되었습니다 ✓','success');
+// ═══════════════════════════════
+//  PWA 초기화
+// ═══════════════════════════════
+(function initPWA(){
+  // 1) 아이콘 SVG (192×192) → data URI
+  const iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+    <rect width="192" height="192" rx="38" fill="#2563eb"/>
+    <text x="96" y="130" font-size="110" text-anchor="middle" fill="white">🍱</text>
+  </svg>`;
+  const iconUrl = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(iconSvg)));
+
+  // apple-touch-icon 설정
+  const appleIcon = document.getElementById('apple-icon');
+  if(appleIcon) appleIcon.href = iconUrl;
+
+  // 2) Web App Manifest (JSON → Blob URL)
+  const manifest = {
+    name: '점심 주문 관리',
+    short_name: '점심 주문',
+    description: '사무실 도시락 주문·정산 시스템',
+    start_url: './',
+    display: 'standalone',
+    orientation: 'portrait',
+    background_color: '#f9fafb',
+    theme_color: '#2563eb',
+    icons: [
+      { src: iconUrl, sizes: '192x192', type: 'image/svg+xml', purpose: 'any maskable' },
+      { src: iconUrl, sizes: '512x512', type: 'image/svg+xml', purpose: 'any maskable' },
+    ],
+    lang: 'ko',
+    categories: ['productivity', 'food'],
+  };
+  const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/json'});
+  const manifestUrl  = URL.createObjectURL(manifestBlob);
+  const manifestLink = document.getElementById('pwa-manifest');
+  if(manifestLink) manifestLink.href = manifestUrl;
+
+  // 3) Service Worker (오프라인 캐시)
+  if('serviceWorker' in navigator){
+    const swCode = `
+const CACHE='lunch-app-v1';
+const ASSETS=[self.location.pathname];
+self.addEventListener('install', e=>e.waitUntil(
+  caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting())
+));
+self.addEventListener('activate', e=>e.waitUntil(
+  caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+  .then(()=>self.clients.claim())
+));
+self.addEventListener('fetch', e=>{
+  if(e.request.method!=='GET') return;
+  e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).catch(()=>caches.match(ASSETS[0]))));
+});`;
+    const swBlob = new Blob([swCode], {type:'application/javascript'});
+    const swUrl  = URL.createObjectURL(swBlob);
+    navigator.serviceWorker.register(swUrl, {scope:'./'}).catch(()=>{});
+  }
+
+  // 4) 설치 배너 (Android Chrome)
+  let deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e=>{
+    e.preventDefault();
+    deferredPrompt = e;
+    showInstallBanner();
+  });
+
+  function showInstallBanner(){
+    const existing = document.getElementById('pwa-install-banner');
+    if(existing) return;
+    const banner = document.createElement('div');
+    banner.id = 'pwa-install-banner';
+    banner.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        <span style="font-size:22px">🍱</span>
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#1e3a8a">홈 화면에 앱 추가</div>
+          <div style="font-size:11px;color:#3b82f6;margin-top:1px">오프라인에서도 사용 가능합니다</div>
+        </div>
+      </div>
+      <button id="pwa-install-btn" style="padding:7px 16px;background:#2563eb;color:white;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">설치</button>
+      <button id="pwa-dismiss-btn" style="padding:7px 10px;background:transparent;color:#6b7280;border:none;font-size:18px;cursor:pointer;line-height:1">×</button>`;
+    banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e5e7eb;padding:12px 16px;display:flex;align-items:center;gap:10px;z-index:9999;box-shadow:0 -4px 12px rgba(0,0,0,.1)';
+    document.body.appendChild(banner);
+    document.getElementById('pwa-install-btn').onclick = ()=>{
+      if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt.userChoice.then(()=>{deferredPrompt=null;banner.remove();}); }
+    };
+    document.getElementById('pwa-dismiss-btn').onclick = ()=>banner.remove();
+  }
+
+  // 5) iOS Safari 설치 안내 감지
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const isInStandalone = window.navigator.standalone === true;
+  if(isIOS && !isInStandalone){
+    setTimeout(()=>{
+      const existing = document.getElementById('pwa-install-banner');
+      if(existing) return;
+      const banner = document.createElement('div');
+      banner.id = 'pwa-install-banner';
+      banner.innerHTML = `
+        <div style="display:flex;align-items:flex-start;gap:10px;flex:1">
+          <span style="font-size:22px;flex-shrink:0">🍱</span>
+          <div>
+            <div style="font-size:13px;font-weight:700;color:#1e3a8a">홈 화면에 앱 추가 방법</div>
+            <div style="font-size:12px;color:#374151;margin-top:4px;line-height:1.6">
+              Safari 하단 <strong>공유 버튼(□↑)</strong> 탭 →<br>
+              <strong>홈 화면에 추가</strong> 선택 → <strong>추가</strong>
+            </div>
+          </div>
+        </div>
+        <button id="pwa-dismiss-btn" style="padding:6px 10px;background:transparent;color:#6b7280;border:none;font-size:18px;cursor:pointer;flex-shrink:0;line-height:1">×</button>`;
+      banner.style.cssText = 'position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #e5e7eb;padding:14px 16px;display:flex;align-items:flex-start;gap:10px;z-index:9999;box-shadow:0 -4px 12px rgba(0,0,0,.1)';
+      document.body.appendChild(banner);
+      document.getElementById('pwa-dismiss-btn').onclick = ()=>banner.remove();
+    }, 3000);
+  }
+})();
+</script>
+</body>
+</html>
