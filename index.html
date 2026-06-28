@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>점심 주문 관리</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Malgun Gothic', sans-serif; background: #f3f4f6; color: #1f2937; }
+
+/* 로그인 */
+#page-login { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #1e40af, #3b82f6); padding: 20px; }
+.login-box { background: white; border-radius: 16px; padding: 36px 28px; width: 100%; max-width: 380px; }
+.login-logo { text-align: center; margin-bottom: 24px; }
+.login-logo .emoji { font-size: 48px; display: block; margin-bottom: 8px; }
+.login-logo h1 { font-size: 20px; font-weight: 700; color: #111827; }
+.login-logo p { font-size: 13px; color: #6b7280; margin-top: 4px; }
+.tab-row { display: flex; background: #f3f4f6; border-radius: 8px; padding: 4px; margin-bottom: 20px; }
+.tab-btn { flex: 1; padding: 8px; border: none; background: none; border-radius: 6px; font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer; }
+.tab-btn.on { background: white; color: #2563eb; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+.field input, .field select { width: 100%; padding: 11px 14px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: 14px; color: #111827; outline: none; -webkit-appearance: none; }
+.field input:focus, .field select:focus { border-color: #2563eb; }
+.login-btn { width: 100%; padding: 13px; background: #2563eb; color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin-top: 4px; }
+.login-btn:active { background: #1d4ed8; }
+.err-msg { display: none; margin-top: 12px; padding: 10px 14px; background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; font-size: 13px; font-weight: 600; color: #dc2626; text-align: center; }
+.hint { text-align: center; font-size: 12px; color: #9ca3af; margin-top: 14px; }
+
+/* 앱 */
+#page-app { display: none; }
+.header { background: white; border-bottom: 1px solid #e5e7eb; padding: 0 16px; height: 54px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-logo { font-size: 20px; }
+.header-title { font-size: 16px; font-weight: 700; }
+.header-badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 700; }
+.badge-admin { background: #fef9c3; color: #854d0e; }
+.badge-user { background: #eff6ff; color: #1d4ed8; }
+.header-right { display: flex; align-items: center; gap: 8px; }
+.uname { font-size: 13px; font-weight: 600; color: #374151; }
+.out-btn { font-size: 12px; padding: 5px 10px; border: 1px solid #d1d5db; border-radius: 6px; background: white; color: #6b7280; cursor: pointer; }
+.body { padding: 16px; max-width: 900px; margin: 0 auto; }
+
+/* 탭 네비 */
+.nav { display: flex; gap: 4px; margin-bottom: 20px; background: white; border-radius: 8px; padding: 4px; border: 1px solid #e5e7eb; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.nav-btn { padding: 8px 14px; border: none; background: none; border-radius: 6px; font-size: 13px; font-weight: 600; color: #6b7280; cursor: pointer; white-space: nowrap; }
+.nav-btn.on { background: #2563eb; color: white; }
+
+/* 카드 */
+.card { background: white; border-radius: 10px; border: 1px solid #e5e7eb; padding: 18px; margin-bottom: 14px; }
+.card-title { font-size: 15px; font-weight: 700; color: #111827; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+
+/* 통계 */
+.stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 14px; }
+.stat { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; text-align: center; }
+.stat-num { font-size: 26px; font-weight: 800; color: #2563eb; }
+.stat-label { font-size: 11px; color: #6b7280; margin-top: 2px; font-weight: 600; }
+
+/* 테이블 */
+.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tbl th { padding: 9px 10px; background: #f9fafb; border-bottom: 2px solid #e5e7eb; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; }
+.tbl td { padding: 9px 10px; border-bottom: 1px solid #f3f4f6; }
+
+/* 주문 버튼 */
+.order-row { border: 1.5px solid #e5e7eb; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+.order-row.done { border-color: #86efac; background: #f0fdf4; }
+.order-date { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 8px; }
+.order-menu { font-size: 11px; color: #9ca3af; margin-bottom: 8px; }
+.order-btns { display: flex; gap: 6px; flex-wrap: wrap; }
+.obtn { padding: 7px 14px; border: 1.5px solid #d1d5db; border-radius: 6px; font-size: 13px; font-weight: 600; background: white; color: #374151; cursor: pointer; }
+.obtn:active { opacity: .7; }
+.obtn.sel-none { border-color: #6b7280; background: #f3f4f6; }
+.obtn.sel-korean { border-color: #2563eb; background: #eff6ff; color: #1d4ed8; }
+.obtn.sel-salad { border-color: #16a34a; background: #f0fdf4; color: #15803d; }
+
+/* 알림 배너 */
+.alert-today { background: linear-gradient(135deg, #fef9c3, #fef3c7); border: 1.5px solid #fbbf24; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.alert-next { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1.5px solid #93c5fd; border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+.alert-label { font-size: 11px; font-weight: 800; letter-spacing: .04em; margin-bottom: 4px; }
+.alert-today .alert-label { color: #92400e; }
+.alert-next .alert-label { color: #1d4ed8; }
+.alert-title { font-size: 16px; font-weight: 800; margin-bottom: 10px; }
+.alert-today .alert-title { color: #78350f; }
+.alert-next .alert-title { color: #1e3a8a; }
+.alert-chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 700; cursor: pointer; border: 2px solid transparent; }
+.chip-k { background: #dbeafe; color: #1d4ed8; }
+.chip-k.sel, .chip-k:active { background: #2563eb; color: white; }
+.chip-s { background: #dcfce7; color: #15803d; }
+.chip-s.sel, .chip-s:active { background: #16a34a; color: white; }
+.chip-n { background: #f3f4f6; color: #6b7280; }
+.chip-n.sel, .chip-n:active { background: #6b7280; color: white; }
+.chip-done { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 12px; background: #dcfce7; color: #15803d; margin-top: 8px; }
+
+/* 식단표 */
+.menu-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.menu-day { border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; }
+.menu-day-hd { background: #2563eb; color: white; padding: 6px; text-align: center; font-size: 12px; font-weight: 700; }
+.menu-day-hd.today { background: #d97706; }
+.menu-day-bd { padding: 8px; font-size: 11px; }
+.menu-type { font-size: 10px; font-weight: 700; color: #9ca3af; margin-bottom: 2px; }
+.menu-val { color: #374151; line-height: 1.4; margin-bottom: 6px; }
+.menu-val.salad { color: #16a34a; }
+.menu-img { width: 100%; max-height: 320px; object-fit: contain; border-radius: 8px; border: 1px solid #e5e7eb; margin-bottom: 12px; }
+.upload-zone { border: 2px dashed #d1d5db; border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; }
+.upload-zone:active { background: #eff6ff; border-color: #2563eb; }
+.input-f { width: 100%; padding: 8px; border: 1.5px solid #e5e7eb; border-radius: 6px; font-size: 12px; margin-top: 4px; outline: none; }
+.input-f:focus { border-color: #2563eb; }
+
+/* 직원 */
+.emp-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 8px; margin-bottom: 6px; background: white; }
+.emp-av { width: 34px; height: 34px; border-radius: 50%; background: #eff6ff; color: #2563eb; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; margin-right: 10px; flex-shrink: 0; }
+.role-tag { font-size: 11px; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+.role-admin { background: #fef9c3; color: #854d0e; }
+.role-user { background: #eff6ff; color: #1d4ed8; }
+
+/* 공지 */
+.notice-box { background: #fefce8; border: 1.5px solid #fbbf24; border-radius: 8px; padding: 14px; font-size: 13px; line-height: 1.8; white-space: pre-wrap; font-family: monospace; color: #111827; margin-top: 12px; }
+
+/* 정산 */
+.amt { font-weight: 700; color: #dc2626; }
+
+/* 모달 */
+.modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+.modal-bg.show { display: flex; }
+.modal { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 400px; }
+.modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+.modal-foot { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+.btn-cancel { padding: 8px 16px; border: 1.5px solid #d1d5db; border-radius: 8px; background: white; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-ok { padding: 8px 16px; border: none; border-radius: 8px; background: #2563eb; color: white; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-sm { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+.btn-primary { background: #2563eb; color: white; }
+.btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fca5a5; }
+.btn-success { background: #16a34a; color: white; }
+.btn-gray { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+
+/* 토스트 */
+.toast { position: fixed; top: 16px; right: 16px; background: #1f2937; color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; z-index: 999; display: none; max-width: 280px; }
+.toast.show { display: block; }
+.toast.ok { background: #16a34a; }
+.toast.err { background: #dc2626; }
+
+/* 섹션 구분 */
+.week-label { font-size: 11px; font-weight: 800; color: #9ca3af; margin: 14px 0 8px; letter-spacing: .04em; }
+.info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 12px 14px; font-size: 13px; color: #1d4ed8; margin-bottom: 12px; }
+.deadline { font-size: 11px; background: #fef9c3; color: #854d0e; padding: 3px 8px; border-radius: 10px; font-weight: 700; }
+
+/* 업로드 */
+.upload-zone { border: 2px dashed #d1d5db; border-radius: 10px; padding: 28px; text-align: center; cursor: pointer; }
+.upload-zone:active { background: #eff6ff; border-color: #2563eb; }
+.input-f { width: 100%; padding: 8px; border: 1.5px solid #e5e7eb; border-radius: 6px; font-size: 12px; margin-top: 4px; outline: none; }
+.input-f:focus { border-color: #2563eb; }
+@media (max-width: 500px) {
+  .menu-grid { grid-template-columns: repeat(2, 1fr); }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<!-- 로그인 페이지 -->
+<div id="page-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <span class="emoji">🍱</span>
+      <h1>점심 주문 관리</h1>
+      <p>사무실 도시락 주문 · 정산 시스템</p>
+    </div>
+    <div class="tab-row">
+      <button class="tab-btn on" id="tab-admin-btn">관리자</button>
+      <button class="tab-btn" id="tab-user-btn">직원</button>
+    </div>
+    <div id="admin-fields">
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="admin-pw" placeholder="관리자 비밀번호 입력">
+      </div>
+    </div>
+    <div id="user-fields" class="hidden">
+      <div class="field">
+        <label>이름 선택</label>
+        <select id="user-sel"></select>
+      </div>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="user-pw" placeholder="비밀번호 입력">
+      </div>
+    </div>
+    <div class="err-msg" id="login-err"></div>
+    <button class="login-btn" id="do-login-btn">로그인</button>
+    <p class="hint">관리자: <b>admin1234</b> &nbsp;|&nbsp; 직원: <b>1234</b></p>
+  </div>
+</div>
+
+<!-- 앱 페이지 -->
+<div id="page-app">
+  <div class="header">
+    <div class="header-left">
+      <span class="header-logo">🍱</span>
+      <span class="header-title">점심 주문</span>
+      <span class="header-badge" id="hd-badge"></span>
+    </div>
+    <div class="header-right">
+      <span class="uname" id="hd-name"></span>
+      <button class="out-btn" id="do-logout-btn">로그아웃</button>
+    </div>
+  </div>
+  <div class="body">
+    <div class="nav" id="nav-bar"></div>
+    <div id="content"></div>
+  </div>
+</div>
+
+<!-- 직원 추가 모달 -->
+<div class="modal-bg" id="modal-emp">
+  <div class="modal">
+    <h3>직원 추가</h3>
+    <div class="field"><label>이름</label><input type="text" id="m-name" placeholder="홍길동"></div>
+    <div class="field"><label>부서</label><input type="text" id="m-dept" placeholder="총무팀"></div>
+    <div class="field"><label>권한</label>
+      <select id="m-role">
+        <option value="user">직원</option>
+        <option value="admin">관리자</option>
+      </select>
+    </div>
+    <div class="field"><label>비밀번호</label><input type="password" id="m-pw" placeholder="초기 비밀번호"></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" id="modal-emp-cancel">취소</button>
+      <button class="btn-ok" id="modal-emp-ok">추가</button>
+    </div>
+  </div>
+</div>
+
+<!-- 계좌 모달 -->
+<div class="modal-bg" id="modal-acc">
+  <div class="modal">
+    <h3>계좌 정보 설정</h3>
+    <div class="field"><label>예금주</label><input type="text" id="a-holder" placeholder="홍길동"></div>
+    <div class="field"><label>은행</label><input type="text" id="a-bank" placeholder="국민은행"></div>
+    <div class="field"><label>계좌번호</label><input type="text" id="a-num" placeholder="123-456-789012"></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" id="modal-acc-cancel">취소</button>
+      <button class="btn-ok" id="modal-acc-ok">저장</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ================================================
+//  저장소
+// ================================================
+var store = {
+  get: function(k, def) {
+    try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : def; } catch(e) { return def; }
+  },
+  set: function(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {}
+  }
+};
+
+// ================================================
+//  앱 상태
+// ================================================
+var S = {
+  mode: 'admin',
+  user: null,
+  tab: '',
+  inputMode: 'auto',
+  selMonth: '',
+  employees: store.get('emp', [
+    { id: 1, name: '김철수', dept: '총무팀', role: 'admin', pw: 'admin1234' },
+    { id: 2, name: '이영희', dept: '영업팀', role: 'user',  pw: '1234' },
+    { id: 3, name: '박민준', dept: '개발팀', role: 'user',  pw: '1234' }
+  ]),
+  menus:    store.get('menus', {}),
+  orders:   store.get('orders', {}),
+  account:  store.get('acc',   { holder:'', bank:'', num:'' }),
+  adminPw:  store.get('apw',   'admin1234'),
+  imgThis:  store.get('imgT',  null),
+  imgNext:  store.get('imgN',  null)
+};
+
+function save() {
+  store.set('emp',    S.employees);
+  store.set('menus',  S.menus);
+  store.set('orders', S.orders);
+  store.set('acc',    S.account);
+  store.set('apw',    S.adminPw);
+  try { store.set('imgT', S.imgThis); } catch(e) {}
+  try { store.set('imgN', S.imgNext); } catch(e) {}
+}
+
+// ================================================
+//  날짜 유틸
+// ================================================
+function today() {
+  var d = new Date();
+  return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+}
+function pad(n) { return n < 10 ? '0'+n : ''+n; }
+function parseD(s) { var p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+function fmtD(s) {
+  var d = parseD(s), days=['일','월','화','수','목','금','토'];
+  return (d.getMonth()+1)+'/'+d.getDate()+'('+days[d.getDay()]+')';
+}
+function weekOf(base) {
+  var d = parseD(base), day = d.getDay();
+  var mon = new Date(d); mon.setDate(d.getDate() - (day===0?6:day-1));
+  var arr = [];
+  for(var i=0;i<5;i++) {
+    var dd = new Date(mon); dd.setDate(mon.getDate()+i);
+    arr.push(dd.getFullYear()+'-'+pad(dd.getMonth()+1)+'-'+pad(dd.getDate()));
+  }
+  return arr;
+}
+function thisWeek() { return weekOf(today()); }
+function nextWeek() {
+  var d = new Date(); d.setDate(d.getDate()+7);
+  return weekOf(d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()));
+}
+function nextWorkday() {
+  var d = new Date(); d.setDate(d.getDate()+1);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+function isToday(s) { return s===today(); }
+function isTomorrow(s) { return s===nextWorkday(); }
+function thisMonth() { return today().slice(0,7); }
+function lastWorkday(ym) {
+  var p=ym.split('-'), d=new Date(+p[0],+p[1],0);
+  while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()-1);
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+}
+var DAY_KO=['월','화','수','목','금'];
+
+// ================================================
+//  토스트
+// ================================================
+var toastTimer;
+function showToast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type?' '+type:'');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ el.className='toast'; }, 2600);
+}
+
+// ================================================
+//  로그인
+// ================================================
+var loginTab = 'admin';
+
+function initLogin() {
+  fillUserSel();
+
+  document.getElementById('tab-admin-btn').onclick = function() {
+    loginTab = 'admin';
+    document.getElementById('tab-admin-btn').className = 'tab-btn on';
+    document.getElementById('tab-user-btn').className  = 'tab-btn';
+    document.getElementById('admin-fields').className  = '';
+    document.getElementById('user-fields').className   = 'hidden';
+    document.getElementById('login-err').style.display = 'none';
+  };
+
+  document.getElementById('tab-user-btn').onclick = function() {
+    loginTab = 'user';
+    document.getElementById('tab-admin-btn').className = 'tab-btn';
+    document.getElementById('tab-user-btn').className  = 'tab-btn on';
+    document.getElementById('admin-fields').className  = 'hidden';
+    document.getElementById('user-fields').className   = '';
+    document.getElementById('login-err').style.display = 'none';
+    fillUserSel();
+  };
+
+  document.getElementById('do-login-btn').onclick = doLogin;
+
+  document.getElementById('admin-pw').onkeydown = function(e) {
+    if(e.keyCode===13) doLogin();
+  };
+  document.getElementById('user-pw').onkeydown = function(e) {
+    if(e.keyCode===13) doLogin();
+  };
+}
+
+function fillUserSel() {
+  var sel = document.getElementById('user-sel');
+  sel.innerHTML = '<option value="">-- 선택하세요 --</option>';
+  for(var i=0;i<S.employees.length;i++) {
+    var e = S.employees[i];
+    var o = document.createElement('option');
+    o.value = e.id;
+    o.textContent = e.name + ' (' + e.dept + ')';
+    sel.appendChild(o);
+  }
+}
+
+function showErr(msg) {
+  var el = document.getElementById('login-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function doLogin() {
+  document.getElementById('login-err').style.display = 'none';
+  if(loginTab === 'admin') {
+    var pw = document.getElementById('admin-pw').value;
+    if(!pw) { showErr('비밀번호를 입력해 주세요'); return; }
+    if(pw !== S.adminPw) { showErr('비밀번호가 틀렸습니다'); return; }
+    S.user = S.employees.find(function(e){ return e.role==='admin'; }) || { id:0, name:'관리자', role:'admin', dept:'', pw:S.adminPw };
+    S.mode = 'admin';
+  } else {
+    var id  = parseInt(document.getElementById('user-sel').value);
+    var pw2 = document.getElementById('user-pw').value;
+    if(!id)  { showErr('이름을 선택해 주세요'); return; }
+    if(!pw2) { showErr('비밀번호를 입력해 주세요'); return; }
+    var emp = null;
+    for(var i=0;i<S.employees.length;i++) {
+      if(S.employees[i].id===id) { emp=S.employees[i]; break; }
+    }
+    if(!emp)        { showErr('직원 정보를 찾을 수 없습니다'); return; }
+    if(emp.pw!==pw2){ showErr('비밀번호가 틀렸습니다'); return; }
+    S.user = emp;
+    S.mode = emp.role;
+  }
+
+  document.getElementById('page-login').style.display = 'none';
+  document.getElementById('page-app').style.display   = 'block';
+  document.getElementById('hd-name').textContent  = S.user.name;
+  document.getElementById('hd-badge').textContent = S.mode==='admin' ? '관리자' : '직원';
+  document.getElementById('hd-badge').className   = 'header-badge ' + (S.mode==='admin'?'badge-admin':'badge-user');
+  window.scrollTo(0,0);
+  S.tab = '';
+  renderNav();
+}
+
+document.getElementById('do-logout-btn').onclick = function() {
+  S.user = null;
+  document.getElementById('page-app').style.display   = 'none';
+  document.getElementById('page-login').style.display = 'flex';
+  document.getElementById('admin-pw').value = '';
+  document.getElementById('user-pw').value  = '';
+  document.getElementById('login-err').style.display = 'none';
+  S.tab = '';
+};
+
+// ================================================
+//  네비게이션
+// ================================================
+var ADMIN_TABS = [
+  { id:'dash',    label:'📊 대시보드' },
+  { id:'menu',    label:'📋 식단표 등록' },
+  { id:'orders',  label:'📦 주문 현황' },
+  { id:'monthly', label:'📈 월별 현황' },
+  { id:'settle',  label:'💰 정산' },
+  { id:'staff',   label:'👥 직원 관리' },
+  { id:'notice',  label:'📢 공지 생성' }
+];
+var USER_TABS = [
+  { id:'home',      label:'🏠 홈' },
+  { id:'menuview',  label:'🍽️ 식단표' },
+  { id:'myorder',   label:'✅ 식사 신청' },
+  { id:'mysettle',  label:'💰 내 정산' }
+];
+
+function renderNav() {
+  var tabs = S.mode==='admin' ? ADMIN_TABS : USER_TABS;
+  if(!S.tab) S.tab = tabs[0].id;
+  var nav = document.getElementById('nav-bar');
+  nav.innerHTML = '';
+  for(var i=0;i<tabs.length;i++) {
+    (function(t){
+      var btn = document.createElement('button');
+      btn.className = 'nav-btn' + (S.tab===t.id?' on':'');
+      btn.textContent = t.label;
+      btn.onclick = function(){ S.tab=t.id; renderNav(); };
+      nav.appendChild(btn);
+    })(tabs[i]);
+  }
+  renderContent();
+}
+
+function renderContent() {
+  var el = document.getElementById('content');
+  var fn = {
+    dash:     pageDash,
+    menu:     pageMenu,
+    orders:   pageOrders,
+    monthly:  pageMonthly,
+    settle:   pageSettle,
+    staff:    pageStaff,
+    notice:   pageNotice,
+    home:     pageHome,
+    menuview: pageMenuView,
+    myorder:  pageMyOrder,
+    mysettle: pageMySettle
+  }[S.tab];
+  el.innerHTML = fn ? fn() : '';
+  afterRender();
+}
+
+// ================================================
+//  공통: 빠른 주문 버튼 클릭
+// ================================================
+function quickOrder(date, choice) {
+  if(!S.orders[date]) S.orders[date] = [];
+  var found = false;
+  for(var i=0;i<S.orders[date].length;i++) {
+    if(S.orders[date][i].uid===S.user.id) {
+      S.orders[date][i].choice=choice; found=true; break;
+    }
+  }
+  if(!found) S.orders[date].push({ uid:S.user.id, choice:choice });
+  save();
+  var label = choice==='korean'?'한식':choice==='salad'?'샐러드':'불참';
+  showToast(fmtD(date)+' '+label+' 선택!', 'ok');
+  renderContent();
+}
+
+function getChoice(date, uid) {
+  var arr = S.orders[date]||[];
+  for(var i=0;i<arr.length;i++) if(arr[i].uid===uid) return arr[i].choice;
+  return '';
+}
+
+function chipClass(choice, type) {
+  var base = type==='korean'?'chip chip-k':type==='salad'?'chip chip-s':'chip chip-n';
+  return base + (choice===type?' sel':'');
+}
+
+// ================================================
+//  관리자 — 대시보드
+// ================================================
+function pageDash() {
+  var tw=thisWeek(), nd=nextWorkday(), mo=thisMonth();
+  var todayOrds=0, tmrOrds=0, moOrds=0;
+  var t=today();
+  var allDates=Object.keys(S.orders);
+  for(var i=0;i<allDates.length;i++) {
+    var d=allDates[i], arr=S.orders[d]||[];
+    for(var j=0;j<arr.length;j++) {
+      if(arr[j].choice==='none') continue;
+      if(d===t)  todayOrds++;
+      if(d===nd) tmrOrds++;
+      if(d.slice(0,7)===mo) moOrds++;
+    }
+  }
+  var html = '<div class="stats">';
+  html += '<div class="stat"><div class="stat-num">'+S.employees.length+'</div><div class="stat-label">전체 직원</div></div>';
+  html += '<div class="stat"><div class="stat-num">'+todayOrds+'</div><div class="stat-label">오늘 주문</div></div>';
+  html += '<div class="stat"><div class="stat-num">'+tmrOrds+'</div><div class="stat-label">내일 주문</div></div>';
+  html += '<div class="stat"><div class="stat-num">'+(moOrds*7000).toLocaleString()+'원</div><div class="stat-label">이번 달 식대</div></div>';
+  html += '</div>';
+  html += '<div class="card"><div class="card-title">📋 이번 주 현황</div>';
+  html += '<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>직원</th>';
+  for(var i=0;i<tw.length;i++) html+='<th>'+fmtD(tw[i])+'</th>';
+  html+='<th>소계</th></tr></thead><tbody>';
+  for(var ei=0;ei<S.employees.length;ei++) {
+    var emp=S.employees[ei], cnt=0;
+    html+='<tr><td><b>'+emp.name+'</b><br><span style="font-size:11px;color:#9ca3af">'+emp.dept+'</span></td>';
+    for(var di=0;di<tw.length;di++) {
+      var c=getChoice(tw[di],emp.id);
+      if(c==='korean'){ cnt++; html+='<td style="color:#2563eb;font-weight:600">한식</td>'; }
+      else if(c==='salad'){ cnt++; html+='<td style="color:#16a34a;font-weight:600">샐러드</td>'; }
+      else if(c==='none') html+='<td style="color:#9ca3af">불참</td>';
+      else html+='<td style="color:#d1d5db">-</td>';
+    }
+    html+='<td><b>'+cnt+'식</b></td></tr>';
+  }
+  html+='</tbody></table></div></div>';
+  return html;
+}
+
+// ================================================
+//  관리자 — 식단표 등록
+// ================================================
+function pageMenu() {
+  var html = '<div class="card"><div class="card-title">📋 식단표 등록</div>';
+
+  // 사진 업로드 섹션
+  html += '<div style="margin-bottom:20px">';
+  html += '<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:10px">📷 식단표 사진 등록</div>';
+  html += menuUploadCard('this', '이번 주', S.imgThis);
+  html += menuUploadCard('next', '다음 주', S.imgNext);
+  html += '</div>';
+
+  // 구분선
+  html += '<div style="border-top:1.5px solid #e5e7eb;margin:4px 0 18px"></div>';
+
+  // 수동 입력 섹션
+  html += '<div style="font-size:13px;font-weight:700;color:#374151;margin-bottom:10px">✏️ 메뉴 직접 입력</div>';
+  html += '<div class="week-label">이번 주</div>' + manualGrid('tw', thisWeek());
+  html += '<div class="week-label" style="margin-top:16px">다음 주</div>' + manualGrid('nw', nextWeek());
+  html += '<div style="text-align:right;margin-top:12px"><button class="btn-sm btn-primary" onclick="saveManual()">💾 저장</button></div>';
+
+  html += '</div>';
+  return html;
+}
+
+function menuUploadCard(key, label, img) {
+  var html = '<div style="border:1.5px solid #e5e7eb;border-radius:10px;padding:14px;margin-bottom:10px">';
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
+  html += '<b style="font-size:13px">'+label+'</b>';
+  if(img) html += '<button class="btn-sm btn-danger" onclick="delImg(\''+key+'\')">🗑 삭제</button>';
+  html += '</div>';
+  if(img) {
+    html += '<img src="'+img+'" class="menu-img" onclick="this.style.maxHeight=this.style.maxHeight===\'none\'?\'320px\':\'none\'" title="클릭하면 크게 볼 수 있습니다">';
+    html += '<div style="margin-top:8px;text-align:center">';
+    html += '<label style="cursor:pointer;font-size:12px;color:#2563eb;font-weight:600">📷 사진 교체<input type="file" id="fi-'+key+'" accept="image/*" style="display:none" onchange="uploadImg(event,\''+key+'\')"></label>';
+    html += '</div>';
+  } else {
+    html += '<div class="upload-zone" onclick="document.getElementById(\'fi-'+key+'\').click()">';
+    html += '<div style="font-size:28px;margin-bottom:6px">📷</div>';
+    html += '<p style="font-size:13px;color:#6b7280"><b style="color:#2563eb">클릭</b>하여 사진 업로드</p>';
+    html += '<p style="font-size:11px;color:#9ca3af;margin-top:4px">JPG, PNG 지원</p>';
+    html += '</div>';
+    html += '<input type="file" id="fi-'+key+'" accept="image/*" style="display:none" onchange="uploadImg(event,\''+key+'\')">';
+  }
+  html += '</div>';
+  return html;
+}
+
+function manualGrid(prefix, days) {
+  var html = '<div class="menu-grid">';
+  for(var i=0;i<days.length;i++) {
+    var d=days[i], m=S.menus[d]||{};
+    html += '<div class="menu-day">';
+    html += '<div class="menu-day-hd'+(isToday(d)?' today':'')+'">'+fmtD(d)+'</div>';
+    html += '<div class="menu-day-bd">';
+    html += '<div class="menu-type">한식</div>';
+    html += '<input class="input-f" id="'+prefix+'-k-'+i+'" placeholder="한식 메뉴">';
+    html += '<div class="menu-type" style="color:#16a34a;margin-top:6px">샐러드</div>';
+    html += '<input class="input-f" id="'+prefix+'-s-'+i+'" placeholder="샐러드">';
+    html += '</div></div>';
+  }
+  html += '</div>';
+  return html;
+}
+
+function afterRender() {
+  if(S.tab==='menu') {
+    var tw=thisWeek(), nw=nextWeek();
+    for(var i=0;i<tw.length;i++) {
+      var m=S.menus[tw[i]]||{};
+      var ki=document.getElementById('tw-k-'+i);
+      var si=document.getElementById('tw-s-'+i);
+      if(ki) ki.value=m.korean||'';
+      if(si) si.value=m.salad||'';
+    }
+    for(var i=0;i<nw.length;i++) {
+      var m=S.menus[nw[i]]||{};
+      var ki=document.getElementById('nw-k-'+i);
+      var si=document.getElementById('nw-s-'+i);
+      if(ki) ki.value=m.korean||'';
+      if(si) si.value=m.salad||'';
+    }
+  }
+}
+
+function buildMiniGrid(key, days) {
+  var el=document.getElementById('mg-'+key);
+  if(!el) return;
+  var html='<div style="margin-top:10px"><div style="font-size:11px;font-weight:700;color:#6b7280;margin-bottom:6px">메뉴 확인·수정</div>';
+  html+='<div class="menu-grid">';
+  for(var i=0;i<days.length;i++) {
+    var d=days[i], m=S.menus[d]||{};
+    html+='<div class="menu-day"><div class="menu-day-hd'+(isToday(d)?' today':'')+'">'+fmtD(d)+'</div>';
+    html+='<div class="menu-day-bd">';
+    html+='<div class="menu-type">한식</div><input class="input-f" id="mg-k-'+key+'-'+i+'" placeholder="한식">';
+    html+='<div class="menu-type" style="color:#16a34a;margin-top:4px">샐러드</div><input class="input-f" id="mg-s-'+key+'-'+i+'" placeholder="샐러드">';
+    html+='</div></div>';
+  }
+  html+='</div><div style="text-align:right;margin-top:8px"><button class="btn-sm btn-primary" onclick="saveMiniGrid(\''+key+'\')">💾 저장</button></div></div>';
+  el.innerHTML=html;
+  for(var i=0;i<days.length;i++) {
+    var m=S.menus[days[i]]||{};
+    var ki=document.getElementById('mg-k-'+key+'-'+i);
+    var si=document.getElementById('mg-s-'+key+'-'+i);
+    if(ki) ki.value=m.korean||'';
+    if(si) si.value=m.salad||'';
+  }
+}
+
+function saveMiniGrid(key) {
+  var days=key==='this'?thisWeek():nextWeek();
+  for(var i=0;i<days.length;i++) {
+    var ki=document.getElementById('mg-k-'+key+'-'+i);
+    var si=document.getElementById('mg-s-'+key+'-'+i);
+    if(!S.menus[days[i]]) S.menus[days[i]]={};
+    if(ki) S.menus[days[i]].korean=ki.value.trim();
+    if(si) S.menus[days[i]].salad=si.value.trim();
+  }
+  save(); showToast('식단이 저장됐습니다','ok');
+}
+
+function saveManual() {
+  var tw=thisWeek(), nw=nextWeek();
+  for(var i=0;i<tw.length;i++) {
+    if(!S.menus[tw[i]]) S.menus[tw[i]]={};
+    var ki=document.getElementById('tw-k-'+i);
+    var si=document.getElementById('tw-s-'+i);
+    if(ki) S.menus[tw[i]].korean=ki.value.trim();
+    if(si) S.menus[tw[i]].salad=si.value.trim();
+  }
+  for(var i=0;i<nw.length;i++) {
+    if(!S.menus[nw[i]]) S.menus[nw[i]]={};
+    var ki=document.getElementById('nw-k-'+i);
+    var si=document.getElementById('nw-s-'+i);
+    if(ki) S.menus[nw[i]].korean=ki.value.trim();
+    if(si) S.menus[nw[i]].salad=si.value.trim();
+  }
+  save(); showToast('식단이 저장됐습니다','ok');
+}
+
+function delImg(key) {
+  if(key==='this') S.imgThis=null; else S.imgNext=null;
+  save(); renderContent();
+}
+
+function uploadImg(e, key) {
+  var file=e.target.files[0]; if(!file) return;
+  e.target.value='';
+  var reader=new FileReader();
+  reader.onload=function(ev) {
+    if(key==='this') S.imgThis=ev.target.result;
+    else S.imgNext=ev.target.result;
+    save();
+    renderContent();
+    showToast((key==='this'?'이번 주':'다음 주')+' 사진이 등록됐습니다', 'ok');
+  };
+  reader.readAsDataURL(file);
+}
+
+// ================================================
+//  관리자 — 주문 현황
+// ================================================
+function pageOrders() {
+  var weeks=[{label:'이번 주',days:thisWeek()},{label:'다음 주',days:nextWeek()}];
+  var html='';
+  for(var wi=0;wi<weeks.length;wi++) {
+    html+='<div class="card"><div class="card-title">📦 '+weeks[wi].label+' 주문 현황</div>';
+    var days=weeks[wi].days;
+    html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>날짜</th><th style="text-align:center">총</th><th style="text-align:center;color:#2563eb">한식</th><th style="text-align:center;color:#16a34a">샐러드</th><th style="text-align:center;color:#9ca3af">불참</th><th>신청자</th></tr></thead><tbody>';
+    for(var di=0;di<days.length;di++) {
+      var d=days[di], arr=S.orders[d]||[];
+      var k=0,s=0,n=0,names='';
+      for(var i=0;i<arr.length;i++) {
+        var emp=findEmp(arr[i].uid);
+        if(arr[i].choice==='korean'){ k++; if(emp) names+='<span style="display:inline-block;margin:2px;padding:2px 7px;background:#eff6ff;border-radius:10px;font-size:11px;color:#1d4ed8">'+emp.name+'</span>'; }
+        else if(arr[i].choice==='salad'){ s++; if(emp) names+='<span style="display:inline-block;margin:2px;padding:2px 7px;background:#f0fdf4;border-radius:10px;font-size:11px;color:#15803d">'+emp.name+'🥗</span>'; }
+        else if(arr[i].choice==='none') n++;
+      }
+      var rowBg=isToday(d)?'background:#fffbeb':isTomorrow(d)?'background:#eff6ff':'';
+      html+='<tr style="'+rowBg+'">';
+      html+='<td><b>'+fmtD(d)+'</b>'+(isToday(d)?'<span style="font-size:10px;background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:8px;margin-left:4px">오늘</span>':isTomorrow(d)?'<span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:1px 5px;border-radius:8px;margin-left:4px">내일</span>':'')+'</td>';
+      html+='<td style="text-align:center;font-weight:700">'+(k+s)+'</td>';
+      html+='<td style="text-align:center;color:#2563eb;font-weight:700">'+k+'</td>';
+      html+='<td style="text-align:center;color:#16a34a;font-weight:700">'+s+'</td>';
+      html+='<td style="text-align:center;color:#9ca3af">'+n+'</td>';
+      html+='<td>'+(names||'<span style="color:#d1d5db;font-size:12px">없음</span>')+'</td>';
+      html+='</tr>';
+    }
+    html+='</tbody></table></div></div>';
+  }
+  return html;
+}
+
+function findEmp(id) {
+  for(var i=0;i<S.employees.length;i++) if(S.employees[i].id===id) return S.employees[i];
+  return null;
+}
+
+// ================================================
+//  관리자 — 월별 현황
+// ================================================
+function pageMonthly() {
+  var months=[];
+  var allD=Object.keys(S.orders).sort().reverse();
+  for(var i=0;i<allD.length;i++) {
+    var ym=allD[i].slice(0,7);
+    if(months.indexOf(ym)<0) months.push(ym);
+  }
+  if(!months.length) return '<div class="card"><p style="text-align:center;color:#9ca3af;padding:30px">주문 데이터가 없습니다</p></div>';
+  if(!S.selMonth||months.indexOf(S.selMonth)<0) S.selMonth=months[0];
+  var mo=S.selMonth;
+  var moDates=Object.keys(S.orders).filter(function(d){return d.slice(0,7)===mo;}).sort();
+  var totalK=0,totalS=0;
+  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html+='<div class="card-title" style="margin-bottom:0">📈 월별 주문 현황</div>';
+  html+='<select onchange="S.selMonth=this.value;renderContent()" style="padding:6px 10px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px">';
+  for(var i=0;i<months.length;i++) html+='<option value="'+months[i]+'"'+(months[i]===mo?' selected':'')+'>'+months[i]+'</option>';
+  html+='</select></div>';
+  html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>직원</th>';
+  for(var i=0;i<moDates.length;i++) html+='<th style="text-align:center;min-width:40px">'+fmtD(moDates[i]).replace(/\(.\)/,'')+'<div style="font-size:9px">'+fmtD(moDates[i]).match(/\((.)\)/)[1]+'</div></th>';
+  html+='<th style="text-align:center">합계</th><th style="text-align:right">식대</th></tr></thead><tbody>';
+  for(var ei=0;ei<S.employees.length;ei++) {
+    var emp=S.employees[ei], ecnt=0;
+    html+='<tr><td><b>'+emp.name+'</b><div style="font-size:11px;color:#9ca3af">'+emp.dept+'</div></td>';
+    for(var di=0;di<moDates.length;di++) {
+      var c=getChoice(moDates[di],emp.id);
+      if(c==='korean'){ ecnt++; totalK++; html+='<td style="text-align:center"><span style="background:#eff6ff;color:#1d4ed8;font-size:11px;font-weight:700;padding:2px 5px;border-radius:4px">밥</span></td>'; }
+      else if(c==='salad'){ ecnt++; totalS++; html+='<td style="text-align:center"><span style="background:#f0fdf4;color:#15803d;font-size:11px;font-weight:700;padding:2px 5px;border-radius:4px">샐</span></td>'; }
+      else if(c==='none') html+='<td style="text-align:center;color:#d1d5db;font-size:11px">✗</td>';
+      else html+='<td style="text-align:center;color:#e5e7eb;font-size:11px">·</td>';
+    }
+    html+='<td style="text-align:center;font-weight:700;color:#2563eb">'+ecnt+'</td>';
+    html+='<td style="text-align:right;font-weight:700;color:#dc2626">'+(ecnt*7000).toLocaleString()+'원</td></tr>';
+  }
+  html+='<tr style="background:#f9fafb"><td style="font-weight:700">합계</td>';
+  for(var di=0;di<moDates.length;di++) {
+    var dk=0,ds=0,arr=S.orders[moDates[di]]||[];
+    for(var i=0;i<arr.length;i++){ if(arr[i].choice==='korean')dk++; else if(arr[i].choice==='salad')ds++; }
+    html+='<td style="text-align:center;font-size:11px"><b>'+(dk+ds)+'</b>'+(dk?'<div style="color:#2563eb">'+dk+'</div>':'')+(ds?'<div style="color:#16a34a">'+ds+'</div>':'')+'</td>';
+  }
+  html+='<td style="text-align:center;font-weight:800;color:#2563eb">'+(totalK+totalS)+'</td>';
+  html+='<td style="text-align:right;font-weight:800;color:#dc2626">'+((totalK+totalS)*7000).toLocaleString()+'원</td></tr>';
+  html+='</tbody></table></div>';
+  html+='<div style="margin-top:10px;padding-top:10px;border-top:1px solid #f3f4f6;font-size:12px;color:#9ca3af;display:flex;gap:14px">';
+  html+='<span><b style="background:#eff6ff;color:#1d4ed8;padding:1px 5px;border-radius:3px">밥</b> 한식</span>';
+  html+='<span><b style="background:#f0fdf4;color:#15803d;padding:1px 5px;border-radius:3px">샐</b> 샐러드</span>';
+  html+='<span><b style="color:#d1d5db">✗</b> 불참</span><span><b style="color:#e5e7eb">·</b> 미신청</span></div>';
+  html+='</div>';
+  return html;
+}
+
+// ================================================
+//  관리자 — 정산
+// ================================================
+function pageSettle() {
+  var mo=thisMonth(), lw=lastWorkday(mo), acc=S.account;
+  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html+='<div class="card-title" style="margin-bottom:0">💰 '+mo+' 정산</div>';
+  html+='<button class="btn-sm btn-gray" onclick="openModal(\'modal-acc\')">계좌 설정</button></div>';
+  if(acc.holder) {
+    html+='<div class="info-box">💳 '+acc.holder+' | '+acc.bank+' | <b>'+acc.num+'</b><br>납부기한: '+fmtD(lw)+'</div>';
+  } else {
+    html+='<div style="padding:10px 14px;background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;font-size:13px;color:#92400e;margin-bottom:12px">⚠️ 계좌 정보를 먼저 설정해 주세요</div>';
+  }
+  html+='<table class="tbl"><thead><tr><th>직원</th><th>부서</th><th style="text-align:center">횟수</th><th style="text-align:right">식대</th></tr></thead><tbody>';
+  var total=0;
+  for(var i=0;i<S.employees.length;i++) {
+    var emp=S.employees[i], cnt=0;
+    var allD=Object.keys(S.orders);
+    for(var j=0;j<allD.length;j++) {
+      if(allD[j].slice(0,7)!==mo) continue;
+      var c=getChoice(allD[j],emp.id);
+      if(c==='korean'||c==='salad') cnt++;
+    }
+    total+=cnt;
+    html+='<tr><td><b>'+emp.name+'</b></td><td>'+emp.dept+'</td><td style="text-align:center">'+cnt+'식</td><td style="text-align:right" class="amt">'+(cnt*7000).toLocaleString()+'원</td></tr>';
+  }
+  html+='<tr style="background:#f9fafb"><td colspan="2"><b>합계</b></td><td style="text-align:center"><b>'+total+'식</b></td><td style="text-align:right" class="amt"><b>'+(total*7000).toLocaleString()+'원</b></td></tr>';
+  html+='</tbody></table>';
+  html+='<div style="text-align:right;margin-top:12px"><button class="btn-sm btn-success" onclick="genSettleNotice()">📢 정산 공지 생성</button></div>';
+  html+='<div id="settle-preview"></div>';
+  html+='</div>';
+  return html;
+}
+
+function genSettleNotice() {
+  var mo=thisMonth(), lw=lastWorkday(mo), acc=S.account;
+  var txt='💰 ['+mo+' 식대 정산 안내]\n\n';
+  for(var i=0;i<S.employees.length;i++) {
+    var emp=S.employees[i], cnt=0;
+    var allD=Object.keys(S.orders);
+    for(var j=0;j<allD.length;j++) {
+      if(allD[j].slice(0,7)!==mo) continue;
+      var c=getChoice(allD[j],emp.id);
+      if(c==='korean'||c==='salad') cnt++;
+    }
+    txt+='👤 '+emp.name+'('+emp.dept+'): '+cnt+'식 → '+(cnt*7000).toLocaleString()+'원\n';
+  }
+  txt+='\n📌 1식 7,000원 | 납부기한: '+fmtD(lw);
+  if(acc.holder) txt+='\n\n💳 '+acc.holder+' | '+acc.bank+' | '+acc.num;
+  var el=document.getElementById('settle-preview');
+  if(el) {
+    el.innerHTML='<div class="notice-box">'+txt+'</div><div style="text-align:right;margin-top:8px"><button class="btn-sm btn-primary" onclick="copyText(\''+encodeURIComponent(txt)+'\')">📋 복사</button></div>';
+  }
+}
+
+function copyText(enc) {
+  var txt=decodeURIComponent(enc);
+  if(navigator.clipboard) {
+    navigator.clipboard.writeText(txt).then(function(){ showToast('복사됐습니다','ok'); });
+  } else {
+    var ta=document.createElement('textarea'); ta.value=txt;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta); showToast('복사됐습니다','ok');
+  }
+}
+
+// ================================================
+//  관리자 — 직원 관리
+// ================================================
+function pageStaff() {
+  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html+='<div class="card-title" style="margin-bottom:0">👥 직원 목록</div>';
+  html+='<button class="btn-sm btn-primary" onclick="openModal(\'modal-emp\')">+ 추가</button></div>';
+  for(var i=0;i<S.employees.length;i++) {
+    var e=S.employees[i];
+    html+='<div class="emp-row"><div style="display:flex;align-items:center">';
+    html+='<div class="emp-av">'+e.name[0]+'</div>';
+    html+='<div><div style="font-size:14px;font-weight:600">'+e.name+'</div><div style="font-size:12px;color:#9ca3af">'+e.dept+'</div></div></div>';
+    html+='<div style="display:flex;align-items:center;gap:8px">';
+    html+='<span class="role-tag '+(e.role==='admin'?'role-admin':'role-user')+'">'+(e.role==='admin'?'관리자':'직원')+'</span>';
+    html+='<button class="btn-sm btn-danger" onclick="delEmp('+e.id+')">삭제</button>';
+    html+='</div></div>';
+  }
+  return html+'</div>';
+}
+
+function delEmp(id) {
+  if(!confirm('삭제하시겠습니까?')) return;
+  S.employees=S.employees.filter(function(e){return e.id!==id;});
+  save(); renderContent(); showToast('삭제됐습니다');
+}
+
+function addEmp() {
+  var name=document.getElementById('m-name').value.trim();
+  var dept=document.getElementById('m-dept').value.trim();
+  var role=document.getElementById('m-role').value;
+  var pw=document.getElementById('m-pw').value;
+  if(!name||!pw){showToast('이름과 비밀번호를 입력하세요','err');return;}
+  S.employees.push({id:Date.now(),name:name,dept:dept,role:role,pw:pw});
+  save(); closeModal(); renderContent(); fillUserSel();
+  showToast(name+' 추가됐습니다','ok');
+}
+
+// ================================================
+//  관리자 — 공지 생성
+// ================================================
+function pageNotice() {
+  var nd=nextWorkday();
+  var html='<div class="card"><div class="card-title">📢 공지 생성</div>';
+  html+='<div style="display:flex;flex-direction:column;gap:8px">';
+  html+='<button class="btn-sm btn-gray" style="text-align:left;width:100%;padding:10px 14px" onclick="genMenuNotice()">📋 다음 주 식단표 공지</button>';
+  html+='<button class="btn-sm btn-gray" style="text-align:left;width:100%;padding:10px 14px" onclick="genOrderNotice()">✅ 내일('+fmtD(nd)+') 주문 수렴 공지</button>';
+  html+='<button class="btn-sm btn-gray" style="text-align:left;width:100%;padding:10px 14px" onclick="genSettleFullNotice()">💰 월말 정산 공지</button>';
+  html+='</div><div id="notice-out"></div></div>';
+  return html;
+}
+
+function showNotice(txt) {
+  var el=document.getElementById('notice-out');
+  if(!el) return;
+  var enc=encodeURIComponent(txt);
+  el.innerHTML='<div style="margin-top:12px;font-size:12px;font-weight:700;color:#6b7280;margin-bottom:6px">생성된 공지</div><div class="notice-box">'+txt+'</div><div style="text-align:right;margin-top:8px"><button class="btn-sm btn-primary" onclick="copyText(\''+enc+'\')">📋 복사</button></div>';
+}
+
+function genMenuNotice() {
+  var nw=nextWeek(), txt='🍱 [다음 주 식단표 공지]\n\n';
+  for(var i=0;i<nw.length;i++) {
+    var m=S.menus[nw[i]]||{};
+    txt+=DAY_KO[i]+'요일 '+fmtD(nw[i])+'\n  🍚 '+(m.korean||'미정')+'\n  🥗 '+(m.salad||'미정')+'\n\n';
+  }
+  txt+='매일 오후 5시까지 다음날 식사 여부를 앱에서 선택해 주세요.';
+  showNotice(txt);
+}
+
+function genOrderNotice() {
+  var nd=nextWorkday(), m=S.menus[nd]||{};
+  var txt='✅ [식사 신청 - '+fmtD(nd)+']\n\n메뉴\n  🍚 '+(m.korean||'미정')+'\n  🥗 '+(m.salad||'미정')+'\n\n⏰ 오늘 오후 5시까지 앱에서 선택해 주세요.';
+  showNotice(txt);
+}
+
+function genSettleFullNotice() {
+  genSettleNotice();
+  var el=document.getElementById('settle-preview');
+  var notice=document.getElementById('notice-out');
+  if(el&&notice) notice.innerHTML=el.innerHTML;
+}
+
+// ================================================
+//  직원 — 홈
+// ================================================
+function pageHome() {
+  var t=today(), nd=nextWorkday();
+  var tm=S.menus[t]||{}, nm=S.menus[nd]||{};
+  var tc=getChoice(t,S.user.id), nc=getChoice(nd,S.user.id);
+  var html='';
+
+  if(tm.korean||tm.salad) {
+    html+='<div class="alert-today"><div class="alert-label">🔵 오늘의 메뉴</div>';
+    html+='<div class="alert-title">'+fmtD(t)+'</div>';
+    html+='<div class="alert-chips">';
+    if(tm.korean) html+='<div class="'+chipClass(tc,'korean')+'" onclick="quickOrder(\''+t+'\',\'korean\')">🍚 '+tm.korean+'</div>';
+    if(tm.salad)  html+='<div class="'+chipClass(tc,'salad')+'"  onclick="quickOrder(\''+t+'\',\'salad\')">🥗 '+tm.salad+'</div>';
+    html+='<div class="'+chipClass(tc,'none')+'" onclick="quickOrder(\''+t+'\',\'none\')">✗ 불참</div>';
+    html+='</div>';
+    if(tc) html+='<div class="chip-done">✓ '+(tc==='korean'?'한식':tc==='salad'?'샐러드':'불참')+' 선택됨</div>';
+    html+='</div>';
+  }
+
+  if(nm.korean||nm.salad) {
+    html+='<div class="alert-next"><div class="alert-label">⏰ 내일 메뉴 — 오후 5시까지 신청!</div>';
+    html+='<div class="alert-title">'+fmtD(nd)+'</div>';
+    html+='<div class="alert-chips">';
+    if(nm.korean) html+='<div class="'+chipClass(nc,'korean')+'" onclick="quickOrder(\''+nd+'\',\'korean\')">🍚 '+nm.korean+'</div>';
+    if(nm.salad)  html+='<div class="'+chipClass(nc,'salad')+'"  onclick="quickOrder(\''+nd+'\',\'salad\')">🥗 '+nm.salad+'</div>';
+    html+='<div class="'+chipClass(nc,'none')+'" onclick="quickOrder(\''+nd+'\',\'none\')">✗ 불참</div>';
+    html+='</div>';
+    if(nc) html+='<div class="chip-done">✓ '+(nc==='korean'?'한식':nc==='salad'?'샐러드':'불참')+' 선택됨</div>';
+    html+='</div>';
+  }
+
+  var mo=thisMonth(), moCnt=0;
+  var allD=Object.keys(S.orders);
+  for(var i=0;i<allD.length;i++) {
+    if(allD[i].slice(0,7)!==mo) continue;
+    var c=getChoice(allD[i],S.user.id);
+    if(c==='korean'||c==='salad') moCnt++;
+  }
+
+  html+='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">';
+  html+='<div class="card-title" style="margin-bottom:0">📅 내 식사 신청 현황</div>';
+  html+='<span style="font-size:12px;color:#6b7280">이번 달 <b style="color:#2563eb">'+moCnt+'식</b> · <b style="color:#dc2626">'+(moCnt*7000).toLocaleString()+'원</b></span>';
+  html+='</div>';
+  html+='<div style="overflow-x:auto"><table class="tbl"><thead><tr><th>날짜</th><th>한식</th><th>샐러드</th><th style="text-align:right">내 신청</th></tr></thead><tbody>';
+
+  var weeks=[{label:'이번 주',days:thisWeek()},{label:'다음 주',days:nextWeek()}];
+  for(var wi=0;wi<weeks.length;wi++) {
+    html+='<tr><td colspan="4" style="background:#f9fafb;padding:8px 10px;font-size:11px;font-weight:800;color:#9ca3af;border-top:1.5px solid #e5e7eb">'+weeks[wi].label+'</td></tr>';
+    var days=weeks[wi].days;
+    for(var di=0;di<days.length;di++) {
+      var d=days[di], m2=S.menus[d]||{}, c2=getChoice(d,S.user.id);
+      var rowBg=isToday(d)?'background:#fffbeb':isTomorrow(d)?'background:#eff6ff':'';
+      html+='<tr style="'+rowBg+'">';
+      html+='<td style="font-size:13px;font-weight:'+(isToday(d)||isTomorrow(d)?'700':'400')+'">'+fmtD(d)+(isToday(d)?'<span style="font-size:10px;background:#fef9c3;color:#854d0e;padding:1px 5px;border-radius:8px;margin-left:4px">오늘</span>':isTomorrow(d)?'<span style="font-size:10px;background:#dbeafe;color:#1d4ed8;padding:1px 5px;border-radius:8px;margin-left:4px">내일</span>':'')+'</td>';
+      html+='<td style="font-size:12px;color:#374151">'+(m2.korean||'<span style="color:#d1d5db">미등록</span>')+'</td>';
+      html+='<td style="font-size:12px;color:#16a34a">'+(m2.salad||'')+'</td>';
+      html+='<td style="text-align:right">';
+      if(c2==='korean') html+='<span style="padding:3px 9px;border-radius:12px;font-size:12px;font-weight:700;background:#eff6ff;color:#1d4ed8">🍚 한식</span>';
+      else if(c2==='salad') html+='<span style="padding:3px 9px;border-radius:12px;font-size:12px;font-weight:700;background:#f0fdf4;color:#15803d">🥗 샐러드</span>';
+      else if(c2==='none') html+='<span style="padding:3px 9px;border-radius:12px;font-size:12px;font-weight:700;background:#f3f4f6;color:#6b7280">✗ 불참</span>';
+      else html+='<span style="font-size:12px;color:#d1d5db">미선택</span>';
+      html+='</td></tr>';
+    }
+  }
+  html+='</tbody></table></div>';
+  html+='<div style="margin-top:10px;font-size:12px;color:#9ca3af;text-align:center">신청 변경은 <b style="color:#2563eb;cursor:pointer" onclick="S.tab=\'myorder\';renderNav()">식사 신청 탭</b>에서 | 매일 오후 5시 마감</div>';
+  html+='</div>';
+  return html;
+}
+
+// ================================================
+//  직원 — 식단표 보기
+// ================================================
+function pageMenuView() {
+  var html='<div class="card"><div class="card-title">🍽️ 식단표</div>';
+  var weeks=[{label:'이번 주',days:thisWeek(),img:S.imgThis},{label:'다음 주',days:nextWeek(),img:S.imgNext}];
+  for(var wi=0;wi<weeks.length;wi++) {
+    var wk=weeks[wi];
+    html+='<div style="margin-bottom:20px"><div style="font-size:13px;font-weight:800;color:#374151;margin-bottom:10px;display:flex;align-items:center;gap:6px"><span style="display:inline-block;width:4px;height:16px;background:#2563eb;border-radius:2px"></span>'+wk.label+'</div>';
+    if(wk.img) {
+      html+='<img src="'+wk.img+'" class="menu-img" onclick="this.style.maxHeight=this.style.maxHeight===\'none\'?\'320px\':\'none\'" title="클릭하면 크게 볼 수 있습니다">';
+    } else {
+      html+='<div style="padding:20px;text-align:center;background:#f9fafb;border:1.5px dashed #e5e7eb;border-radius:10px;color:#9ca3af;font-size:13px">📋 아직 등록되지 않았습니다</div>';
+    }
+    html+='<div class="menu-grid" style="margin-top:10px">';
+    for(var di=0;di<wk.days.length;di++) {
+      var d=wk.days[di], m=S.menus[d]||{};
+      html+='<div class="menu-day"><div class="menu-day-hd'+(isToday(d)?' today':'')+'">'+fmtD(d)+'</div><div class="menu-day-bd">';
+      if(m.korean) html+='<div class="menu-type">한식</div><div class="menu-val">'+m.korean+'</div>';
+      if(m.salad)  html+='<div class="menu-type">샐러드</div><div class="menu-val salad">'+m.salad+'</div>';
+      if(!m.korean&&!m.salad) html+='<div style="font-size:11px;color:#d1d5db">미등록</div>';
+      html+='</div></div>';
+    }
+    html+='</div></div>';
+    if(wi<weeks.length-1) html+='<hr style="border:none;border-top:1px solid #e5e7eb;margin:4px 0 20px">';
+  }
+  html+='</div>';
+  return html;
+}
+
+// ================================================
+//  직원 — 식사 신청
+// ================================================
+function pageMyOrder() {
+  var nd=nextWorkday();
+  var html='<div class="card"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">';
+  html+='<div class="card-title" style="margin-bottom:0">✅ 식사 신청</div>';
+  html+='<span class="deadline">매일 오후 5시 마감</span></div>';
+  html+='<div class="info-box">내일('+fmtD(nd)+') 식사 신청이 오늘 오후 5시 마감입니다.</div>';
+
+  var weeks=[{label:'이번 주',days:thisWeek()},{label:'다음 주',days:nextWeek()}];
+  for(var wi=0;wi<weeks.length;wi++) {
+    html+='<div class="week-label">'+weeks[wi].label+'</div>';
+    var days=weeks[wi].days;
+    for(var di=0;di<days.length;di++) {
+      var d=days[di], m=S.menus[d]||{}, c=getChoice(d,S.user.id);
+      html+='<div class="order-row'+(c&&c!=='none'?' done':'')+'"><div class="order-date">'+fmtD(d)+(isToday(d)?'  🔵':isTomorrow(d)?'  ⏰':'')+'</div>';
+      if(m.korean||m.salad) html+='<div class="order-menu">🍚 '+(m.korean||'')+' / 🥗 '+(m.salad||'')+'</div>';
+      html+='<div class="order-btns">';
+      html+='<button class="obtn'+(c==='none'?' sel-none':'')+'" onclick="quickOrder(\''+d+'\',\'none\')">불참</button>';
+      html+='<button class="obtn'+(c==='korean'?' sel-korean':'')+'" onclick="quickOrder(\''+d+'\',\'korean\')">🍚 한식</button>';
+      html+='<button class="obtn'+(c==='salad'?' sel-salad':'')+'" onclick="quickOrder(\''+d+'\',\'salad\')">🥗 샐러드</button>';
+      html+='</div></div>';
+    }
+  }
+  html+='</div>';
+  return html;
+}
+
+// ================================================
+//  직원 — 내 정산
+// ================================================
+function pageMySettle() {
+  var mo=thisMonth(), lw=lastWorkday(mo), acc=S.account, cnt=0;
+  var allD=Object.keys(S.orders);
+  for(var i=0;i<allD.length;i++) {
+    if(allD[i].slice(0,7)!==mo) continue;
+    var c=getChoice(allD[i],S.user.id);
+    if(c==='korean'||c==='salad') cnt++;
+  }
+  var html='<div class="card"><div class="card-title">💰 내 식대 정산 ('+mo+')</div>';
+  html+='<div class="stats"><div class="stat"><div class="stat-num">'+cnt+'</div><div class="stat-label">이번 달 주문</div></div>';
+  html+='<div class="stat"><div class="stat-num" style="color:#dc2626;font-size:20px">'+(cnt*7000).toLocaleString()+'원</div><div class="stat-label">납부 금액</div></div></div>';
+  if(acc.holder) {
+    html+='<div style="padding:14px;background:#fef9c3;border:1px solid #fbbf24;border-radius:8px;font-size:13px;color:#92400e;line-height:1.8">';
+    html+='💳 <b>정산 계좌</b><br>예금주: '+acc.holder+' | '+acc.bank+'<br>계좌번호: <b>'+acc.num+'</b><br>납부기한: '+fmtD(lw)+'</div>';
+  }
+  html+='<div style="margin-top:14px"><table class="tbl"><thead><tr><th>날짜</th><th>선택</th><th style="text-align:right">금액</th></tr></thead><tbody>';
+  var rows=[];
+  for(var i=0;i<allD.length;i++) {
+    if(allD[i].slice(0,7)!==mo) continue;
+    var c=getChoice(allD[i],S.user.id);
+    if(c==='korean'||c==='salad') rows.push({d:allD[i],c:c});
+  }
+  rows.sort(function(a,b){return a.d<b.d?-1:1;});
+  for(var i=0;i<rows.length;i++) {
+    html+='<tr><td>'+fmtD(rows[i].d)+'</td><td>'+(rows[i].c==='korean'?'한식':'샐러드')+'</td><td style="text-align:right" class="amt">7,000원</td></tr>';
+  }
+  if(!rows.length) html+='<tr><td colspan="3" style="text-align:center;color:#9ca3af;padding:16px">내역 없음</td></tr>';
+  html+='</tbody></table></div></div>';
+  return html;
+}
+
+// ================================================
+//  모달
+// ================================================
+function openModal(id) {
+  document.getElementById(id).className='modal-bg show';
+  if(id==='modal-acc') {
+    document.getElementById('a-holder').value=S.account.holder||'';
+    document.getElementById('a-bank').value=S.account.bank||'';
+    document.getElementById('a-num').value=S.account.num||'';
+  }
+  if(id==='modal-emp') {
+    document.getElementById('m-name').value='';
+    document.getElementById('m-dept').value='';
+    document.getElementById('m-pw').value='';
+  }
+}
+function closeModal() {
+  document.querySelectorAll('.modal-bg').forEach(function(el){ el.className='modal-bg'; });
+}
+
+document.getElementById('modal-emp-cancel').onclick = closeModal;
+document.getElementById('modal-acc-cancel').onclick  = closeModal;
+document.getElementById('modal-emp-ok').onclick = addEmp;
+document.getElementById('modal-acc-ok').onclick = function() {
+  S.account={holder:document.getElementById('a-holder').value,bank:document.getElementById('a-bank').value,num:document.getElementById('a-num').value};
+  save(); closeModal(); renderContent(); showToast('계좌가 저장됐습니다','ok');
+};
+document.querySelectorAll('.modal-bg').forEach(function(el){
+  el.onclick=function(e){ if(e.target===el) closeModal(); };
+});
+
+// ================================================
+//  시작
+// ================================================
+initLogin();
+</script>
+</body>
+</html>
