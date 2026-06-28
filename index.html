@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>점심 주문 관리</title>
+<meta name="description" content="사무실 도시락 주문 정산 시스템">
+<meta name="theme-color" content="#2563eb">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="점심주문">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.json">
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: 'Malgun Gothic', sans-serif; background: #f3f4f6; color: #1f2937; }
@@ -155,6 +163,10 @@ body { font-family: 'Malgun Gothic', sans-serif; background: #f3f4f6; color: #1f
   .stats { grid-template-columns: repeat(2, 1fr); }
 }
 .hidden { display: none !important; }
+/* 설치 버튼 */
+.install-bar { display: none; position: fixed; bottom: 16px; right: 16px; background: #2563eb; color: white; border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(37,99,235,.35); z-index: 999; align-items: center; gap: 8px; border: none; }
+.install-bar.show { display: flex; }
+.ib-close { background: rgba(255,255,255,.25); border: none; color: white; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; font-size: 13px; display: flex; align-items: center; justify-content: center; padding: 0; margin-left: 2px; }
 </style>
 </head>
 <body>
@@ -1172,6 +1184,63 @@ document.querySelectorAll('.modal-bg').forEach(function(el){
 //  시작
 // ================================================
 initLogin();
+
+// ================================================
+//  PWA — 설치 버튼 + 서비스워커
+// ================================================
+(function() {
+  /* 설치 배너 공통 생성 */
+  function makeBar(html, clickFn) {
+    var bar = document.createElement('button');
+    bar.className = 'install-bar show';
+    bar.innerHTML = html;
+    document.body.appendChild(bar);
+    bar.querySelector('.ib-close').onclick = function(e) {
+      e.stopPropagation();
+      bar.remove();
+    };
+    bar.onclick = function(e) {
+      if (e.target.classList.contains('ib-close')) return;
+      if (clickFn) clickFn();
+    };
+    return bar;
+  }
+
+  /* PC/안드로이드 Chrome 설치 프롬프트 */
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    var bar = makeBar(
+      '<span style="font-size:18px">🍱</span><span>앱으로 설치하기</span><button class="ib-close" aria-label="닫기">x</button>',
+      function() {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function() {
+          deferredPrompt = null;
+          bar.remove();
+        });
+      }
+    );
+  });
+
+  /* iOS Safari 안내 배너 */
+  var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  var isStandalone = window.navigator.standalone === true;
+  if (isIOS && !isStandalone) {
+    setTimeout(function() {
+      makeBar(
+        '<span style="font-size:18px">🍱</span><div style="line-height:1.4"><div style="font-size:13px">홈 화면에 추가</div><div style="font-size:11px;opacity:.85">하단 공유버튼 탭후 홈 화면에 추가 선택</div></div><button class="ib-close" aria-label="닫기">x</button>',
+        null
+      );
+    }, 2000);
+  }
+
+  /* Service Worker */
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js', { scope: './' }).catch(function() {});
+  }
+})();
 </script>
 </body>
 </html>
